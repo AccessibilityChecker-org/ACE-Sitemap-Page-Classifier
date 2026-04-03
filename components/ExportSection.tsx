@@ -14,31 +14,26 @@ interface Props {
 }
 
 export default function ExportSection({ analysis, recommendation, quoteCalc, quoteState }: Props) {
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied]             = useState(false)
   const [pdfGenerating, setPdfGenerating] = useState(false)
-  const [pdfError, setPdfError] = useState<string | null>(null)
+  const [pdfError, setPdfError]         = useState<string | null>(null)
 
-  const handleCsvExport = () => {
-    downloadCsv(analysis)
-  }
+  const handleCsvExport = () => downloadCsv(analysis)
 
   const handleCopyQuote = async () => {
     const summary = generateQuoteSummary(analysis, recommendation, quoteCalc, quoteState)
     try {
       await navigator.clipboard.writeText(summary)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2500)
     } catch {
-      // Fallback for older browsers
       const el = document.createElement('textarea')
       el.value = summary
       document.body.appendChild(el)
       el.select()
       document.execCommand('copy')
       document.body.removeChild(el)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2500)
     }
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2500)
   }
 
   const handlePdfExport = async () => {
@@ -75,7 +70,7 @@ export default function ExportSection({ analysis, recommendation, quoteCalc, quo
           </div>
           <div className="text-center">
             <p className="text-sm font-semibold text-gray-800">Export CSV</p>
-            <p className="text-xs text-gray-400 mt-0.5">Full URL list + analysis data</p>
+            <p className="text-xs text-gray-400 mt-0.5">Full URL classification data</p>
           </div>
         </button>
 
@@ -83,25 +78,21 @@ export default function ExportSection({ analysis, recommendation, quoteCalc, quo
         <button
           onClick={handleCopyQuote}
           className={`flex flex-col items-center gap-2 p-4 border rounded-xl transition-colors group ${
-            copied
-              ? 'bg-green-50 border-green-200'
-              : 'bg-gray-50 hover:bg-gray-100 border-gray-200'
+            copied ? 'bg-green-50 border-green-200' : 'bg-gray-50 hover:bg-gray-100 border-gray-200'
           }`}
         >
           <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
             copied ? 'bg-green-200' : 'bg-blue-100 group-hover:bg-blue-200'
           }`}>
-            {copied ? (
-              <Check size={18} className="text-green-700" />
-            ) : (
-              <Copy size={18} className="text-blue-700" />
-            )}
+            {copied
+              ? <Check size={18} className="text-green-700" />
+              : <Copy size={18} className="text-blue-700" />}
           </div>
           <div className="text-center">
             <p className="text-sm font-semibold text-gray-800">
               {copied ? 'Copied!' : 'Copy Quote Summary'}
             </p>
-            <p className="text-xs text-gray-400 mt-0.5">Paste-ready text summary</p>
+            <p className="text-xs text-gray-400 mt-0.5">Paste-ready text for email / CRM</p>
           </div>
         </button>
 
@@ -120,9 +111,9 @@ export default function ExportSection({ analysis, recommendation, quoteCalc, quo
           </div>
           <div className="text-center">
             <p className="text-sm font-semibold text-gray-800">
-              {pdfGenerating ? 'Generating...' : 'Generate PDF Quote'}
+              {pdfGenerating ? 'Generating…' : 'Generate PDF Proposal'}
             </p>
-            <p className="text-xs text-gray-400 mt-0.5">Professional PDF report</p>
+            <p className="text-xs text-gray-400 mt-0.5">Branded proposal for client delivery</p>
           </div>
         </button>
       </div>
@@ -130,7 +121,8 @@ export default function ExportSection({ analysis, recommendation, quoteCalc, quo
       {pdfError && (
         <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
           <svg className="w-4 h-4 text-red-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-red-700">PDF generation failed</p>
@@ -144,13 +136,11 @@ export default function ExportSection({ analysis, recommendation, quoteCalc, quo
         </div>
       )}
 
-      <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
-        <p className="text-xs text-gray-500">
-          <span className="font-medium">CSV</span> includes all classified URLs with page type and weighted values.{' '}
-          <span className="font-medium">Quote Summary</span> is formatted text for pasting into email or CRM.{' '}
-          <span className="font-medium">PDF</span> is a branded 2-page quote report for client delivery.
-        </p>
-      </div>
+      <p className="mt-4 text-xs text-gray-400">
+        <span className="font-medium text-gray-500">CSV</span> — full URL classification data for internal review.{' '}
+        <span className="font-medium text-gray-500">Quote Summary</span> — plain-text summary for email or CRM.{' '}
+        <span className="font-medium text-gray-500">PDF Proposal</span> — polished branded proposal ready for client delivery.
+      </p>
     </div>
   )
 }

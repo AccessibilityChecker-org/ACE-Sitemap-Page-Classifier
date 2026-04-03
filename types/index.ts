@@ -126,6 +126,21 @@ export interface QuoteBuilderState {
   extraPdfPages: number
   additionalVpats: number
   notes: string
+  billingCycle: 'monthly' | 'annual'
+  // Client info for PDF proposals
+  clientCompany: string
+  clientContact: string
+  clientEmail: string
+  clientPhone: string
+  clientWebsite: string
+  salesRep: string
+  salesEmail: string
+  // Scope & Timeline
+  estimatedStart: string
+  remediationTimeline: string
+  contractDuration: string
+  quoteValidUntil: string
+  discount: number
 }
 
 export interface QuoteCalculation {
@@ -172,4 +187,61 @@ export interface AnalysisProgress {
   isComplete: boolean
   isError: boolean
   errorMessage?: string
+}
+
+/**
+ * A saved, named snapshot of a completed analysis + its pricing recommendation.
+ * Used for case study comparison and before/after classifier validation.
+ */
+export interface AnalysisSnapshot {
+  /** Stable client-side ID */
+  id: string
+  /** User-supplied label, e.g. "CountryMax — baseline" */
+  name: string
+  /** ISO timestamp when the snapshot was saved */
+  savedAt: string
+  analysis: AnalysisResult
+  recommendation: PricingRecommendation
+}
+
+/**
+ * Per-category diff between two AnalysisSnapshots (B = "after", A = "before").
+ */
+export interface CategoryComparison {
+  category: string
+  rawCountA: number
+  rawCountB: number
+  /** B − A */
+  rawCountDiff: number
+  weightedCountA: number
+  weightedCountB: number
+  /** B − A */
+  weightedCountDiff: number
+  /** Category only appeared in snapshot A */
+  onlyInA: boolean
+  /** Category only appeared in snapshot B */
+  onlyInB: boolean
+}
+
+/**
+ * Full diff result produced by the comparison engine.
+ * A = baseline, B = improved / second run.
+ */
+export interface ComparisonResult {
+  snapshotA: AnalysisSnapshot
+  snapshotB: AnalysisSnapshot
+  /** B.rawPageCount − A.rawPageCount */
+  rawCountDiff: number
+  /** B.weightedPageCount − A.weightedPageCount */
+  weightedCountDiff: number
+  /** B.weightReductionPercent − A.weightReductionPercent (percentage points) */
+  weightReductionDiff: number
+  planChanged: boolean
+  planNameA: string | null
+  planNameB: string | null
+  /** B.monthlyPrice − A.monthlyPrice */
+  monthlyPriceDiff: number
+  /** B.annualSavings − A.annualSavings */
+  annualSavingsDiff: number
+  categoryComparisons: CategoryComparison[]
 }

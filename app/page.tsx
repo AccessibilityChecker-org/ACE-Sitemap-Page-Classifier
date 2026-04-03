@@ -24,6 +24,9 @@ import QuoteBuilder from '@/components/QuoteBuilder'
 import URLBreakdown from '@/components/URLBreakdown'
 import ExportSection from '@/components/ExportSection'
 import SubdomainManager from '@/components/SubdomainManager'
+import SnapshotPanel from '@/components/SnapshotPanel'
+import ComparisonView from '@/components/ComparisonView'
+import type { AnalysisSnapshot } from '@/types'
 
 const DEFAULT_PROGRESS: AnalysisProgress = {
   step: 'Starting...',
@@ -41,6 +44,19 @@ function getDefaultQuoteState(): QuoteBuilderState {
     extraPdfPages: 0,
     additionalVpats: 0,
     notes: '',
+    billingCycle: 'annual',
+    clientCompany: '',
+    clientContact: '',
+    clientEmail: '',
+    clientPhone: '',
+    clientWebsite: '',
+    salesRep: '',
+    salesEmail: '',
+    estimatedStart: '',
+    remediationTimeline: '4-8 weeks',
+    contractDuration: '12 months',
+    quoteValidUntil: '',
+    discount: 0,
   }
 }
 
@@ -105,6 +121,8 @@ export default function HomePage() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
   const [subdomains, setSubdomains]         = useState<SubdomainEntry[]>([])
   const [quoteState, setQuoteState]         = useState<QuoteBuilderState>(getDefaultQuoteState())
+  const [snapshots, setSnapshots]           = useState<AnalysisSnapshot[]>([])
+  const [comparisonMode, setComparisonMode] = useState(false)
 
   // Track running subdomain scans so we can cancel them on page reset
   const subdomainAbortRefs = useRef<Map<string, AbortController>>(new Map())
@@ -257,6 +275,15 @@ export default function HomePage() {
     )
   }, [])
 
+  // ── Snapshot management ───────────────────────────────────────────────────
+  const handleSaveSnapshot = useCallback((snapshot: AnalysisSnapshot) => {
+    setSnapshots((prev) => [...prev, snapshot])
+  }, [])
+
+  const handleDeleteSnapshot = useCallback((id: string) => {
+    setSnapshots((prev) => prev.filter((s) => s.id !== id))
+  }, [])
+
   // ── Quote calc ────────────────────────────────────────────────────────────
   const quoteCalc: QuoteCalculation = recommendation
     ? calculateQuote(syncedQuoteState)
@@ -330,7 +357,43 @@ export default function HomePage() {
             quoteCalc={quoteCalc}
             quoteState={syncedQuoteState}
           />
+
+          {/* Case Study Snapshots — save current analysis for comparison */}
+          <SnapshotPanel
+            currentAnalysis={analysisResult}
+            currentRecommendation={recommendation}
+            snapshots={snapshots}
+            onSave={handleSaveSnapshot}
+            onDelete={handleDeleteSnapshot}
+          />
         </>
+      )}
+
+      {/* Comparison mode toggle — only appears once 2+ snapshots are saved */}
+      {snapshots.length >= 2 && !comparisonMode && (
+        <div className="text-center py-2">
+          <button
+            onClick={() => setComparisonMode(true)}
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-lg hover:bg-gray-700 transition-colors shadow-sm"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="1" y="1" width="5" height="12" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+              <rect x="8" y="1" width="5" height="12" rx="1" stroke="currentColor" strokeWidth="1.5"/>
+            </svg>
+            Compare Snapshots
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-white/20 text-xs font-bold">
+              {snapshots.length}
+            </span>
+          </button>
+        </div>
+      )}
+
+      {/* Side-by-side comparison view */}
+      {comparisonMode && (
+        <ComparisonView
+          snapshots={snapshots}
+          onClose={() => setComparisonMode(false)}
+        />
       )}
 
       {/* Empty state */}

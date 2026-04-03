@@ -17,11 +17,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-14">
               <div className="flex items-center gap-3">
-                {/* Logo mark */}
+                {/* Logo mark — AccessibilityChecker.org shield */}
                 <div className="flex items-center justify-center w-8 h-8 bg-green-600 rounded-lg">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M8 1L14 4.5V11.5L8 15L2 11.5V4.5L8 1Z" stroke="white" strokeWidth="1.5" fill="none"/>
-                    <path d="M5 8L7 10L11 6" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  <svg width="18" height="20" viewBox="0 0 18 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                      d="M9 1L16.5 4.5V9.5C16.5 13.9 13.2 18 9 19C4.8 18 1.5 13.9 1.5 9.5V4.5L9 1Z"
+                      fill="white"
+                      fillOpacity="0.18"
+                      stroke="white"
+                      strokeWidth="1.4"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M5.5 10L7.8 12.3L12.5 7.5"
+                      stroke="white"
+                      strokeWidth="1.7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </div>
                 <div>
