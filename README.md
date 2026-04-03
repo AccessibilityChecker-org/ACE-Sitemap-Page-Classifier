@@ -4,6 +4,11 @@
 
 Scans a sitemap, classifies pages, detects template repetition, applies weighted pricing, recommends managed accessibility tiers, and generates quote outputs.
 
+<img width="1319" height="859" alt="image" src="https://github.com/user-attachments/assets/1f0e3a40-3561-4a40-a330-1e9ff8067fc0" />
+
+<img width="1242" height="971" alt="image" src="https://github.com/user-attachments/assets/d0ac7d09-8957-4655-8da4-d48d839b57f5" />
+
+
 ## Quick Start
 
 ```bash
