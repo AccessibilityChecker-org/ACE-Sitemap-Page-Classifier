@@ -22,8 +22,6 @@ const GRAY_100:   RGB = [243, 244, 246]
 const WHITE:      RGB = [255, 255, 255]
 const AMBER_50:   RGB = [255, 251, 235]
 const AMBER_600:  RGB = [217, 119, 6]
-const INDIGO_50:  RGB = [238, 242, 255]
-const INDIGO_600: RGB = [79, 70, 229]
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -96,22 +94,40 @@ function getPlanFeatures(
 
 // ─── Page furniture ───────────────────────────────────────────────────────────
 
-/** Slim green header band on content pages (pages 2+) */
+/**
+ * Slim document header on content pages (pages 2+).
+ * A 2.5mm green accent rule at the top, then brand text + ref in
+ * the document's own typography — no heavy banner.
+ */
 function drawPageHeader(doc: DocType, pageW: number, margin: number, ref: string) {
+  // Thin green top rule
   doc.setFillColor(...GREEN)
-  doc.rect(0, 0, pageW, 18, 'F')
-  // White brand text
-  doc.setTextColor(...WHITE)
+  doc.rect(0, 0, pageW, 2.5, 'F')
+  // Brand name in green, reference number in gray
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(9)
-  doc.text('AccessibilityChecker.org  —  ACE™ Price Proposal', margin, 11.5)
+  doc.setFontSize(8)
+  doc.setTextColor(...GREEN)
+  doc.text('ACE™ Price Proposal  —  AccessibilityChecker.org', margin, 9)
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(7.5)
-  doc.text(ref, pageW - margin, 11.5, { align: 'right' })
+  doc.setTextColor(...GRAY_400)
+  doc.text(ref, pageW - margin, 9, { align: 'right' })
+  // Thin gray separator line
+  doc.setDrawColor(...GRAY_200)
+  doc.setLineWidth(0.25)
+  doc.line(margin, 12.5, pageW - margin, 12.5)
 }
 
 /** Footer bar drawn on every content page */
-function drawPageFooter(doc: DocType, pageW: number, pageH: number, margin: number, ref: string, p: number, total: number) {
+function drawPageFooter(
+  doc: DocType,
+  pageW: number,
+  pageH: number,
+  margin: number,
+  ref: string,
+  p: number,
+  total: number,
+) {
   doc.setDrawColor(...GRAY_200)
   doc.setLineWidth(0.25)
   doc.line(margin, pageH - 12, pageW - margin, pageH - 12)
@@ -123,8 +139,8 @@ function drawPageFooter(doc: DocType, pageW: number, pageH: number, margin: numb
 }
 
 /**
- * Ensure we have at least `needed` mm of vertical space before drawing.
- * If not, adds a new page and redraws the running header.
+ * Ensure at least `needed` mm of vertical space before the next element.
+ * Adds a new page and redraws the slim running header when needed.
  */
 function ensureSpace(
   doc: DocType,
@@ -135,18 +151,18 @@ function ensureSpace(
   ref: string,
   pageW: number,
 ): number {
-  const safeBottom = pageH - 20  // 20mm clearance for footer
+  const safeBottom = pageH - 20
   if (y + needed > safeBottom) {
     doc.addPage()
     drawPageHeader(doc, pageW, margin, ref)
-    return 26
+    return 17   // y-start after slim header (rule 2.5mm + text 9mm + sep 12.5mm → content at 17)
   }
   return y
 }
 
 /**
  * Draw a section header: horizontal rule → uppercase overline → green bold title.
- * Returns updated y after the title.
+ * Returns the updated y cursor after the title.
  */
 function drawSectionHeader(
   doc: DocType,
@@ -156,20 +172,17 @@ function drawSectionHeader(
   margin: number,
   pageW: number,
 ): number {
-  // Rule
   doc.setDrawColor(...GRAY_200)
   doc.setLineWidth(0.25)
   doc.line(margin, y, pageW - margin, y)
   y += 3.5
 
-  // Overline
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(7)
   doc.setTextColor(...GRAY_400)
   doc.text(overline.toUpperCase(), margin, y)
   y += 4.5
 
-  // Title
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(14)
   doc.setTextColor(...GREEN)
@@ -179,7 +192,7 @@ function drawSectionHeader(
   return y
 }
 
-/** Draw a green circle + white checkmark bullet at (x, y) */
+/** Draw a filled green circle + white checkmark bullet at (x, y) */
 function drawCheckmark(doc: DocType, x: number, y: number) {
   const cx = x + 2.4
   const cy = y - 1.8
@@ -202,20 +215,20 @@ export async function generatePDFQuote(
   let jsPDFModule: typeof import('jspdf')
   let autoTableModule: typeof import('jspdf-autotable')
   try {
-    jsPDFModule    = await import('jspdf')
+    jsPDFModule     = await import('jspdf')
     autoTableModule = await import('jspdf-autotable')
   } catch (err) {
     throw new Error(`Failed to load PDF libraries: ${err instanceof Error ? err.message : String(err)}`)
   }
 
-  const { jsPDF }   = jsPDFModule
-  const autoTable   = autoTableModule.default
-  const doc         = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+  const { jsPDF } = jsPDFModule
+  const autoTable = autoTableModule.default
+  const doc       = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
 
-  const pageW  = doc.internal.pageSize.getWidth()   // 210
-  const pageH  = doc.internal.pageSize.getHeight()  // 297
+  const pageW  = doc.internal.pageSize.getWidth()   // 210 mm
+  const pageH  = doc.internal.pageSize.getHeight()  // 297 mm
   const margin = 16
-  const cW     = pageW - margin * 2                  // 178
+  const cW     = pageW - margin * 2                  // 178 mm
 
   const clientName   = quoteState.clientCompany || analysis.domain
   const billingLabel = quoteState.billingCycle === 'annual' ? 'Annual' : 'Monthly'
@@ -230,14 +243,13 @@ export async function generatePDFQuote(
 
   const stripW = 28
 
-  // Right accent strip (very light green)
-  doc.setFillColor(209, 250, 229)  // custom soft green
+  // Right accent strip (soft green)
+  doc.setFillColor(209, 250, 229)
   doc.rect(pageW - stripW, 0, stripW, pageH, 'F')
 
   // Full-width green header band
   doc.setFillColor(...GREEN)
   doc.rect(0, 0, pageW - stripW, 48, 'F')
-  // Dark continuation on the strip portion
   doc.setFillColor(...GREEN_DARK)
   doc.rect(pageW - stripW, 0, stripW, 48, 'F')
 
@@ -248,7 +260,7 @@ export async function generatePDFQuote(
   doc.text('AccessibilityChecker.org', margin, 20)
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9.5)
-  doc.setTextColor(187, 247, 208)   // green-200 white-ish
+  doc.setTextColor(187, 247, 208)
   doc.text('Managed Web Accessibility Services', margin, 30)
 
   // ACE™ badge
@@ -264,7 +276,7 @@ export async function generatePDFQuote(
   const dotY = [70, 95, 120, 150, 180, 215]
   dotY.forEach(dy => doc.circle(pageW - stripW / 2, dy, 2.2, 'F'))
 
-  // Green accent rule above main title
+  // Green accent rule above title
   doc.setFillColor(...GREEN)
   doc.rect(margin, 115, 56, 2.5, 'F')
 
@@ -274,24 +286,24 @@ export async function generatePDFQuote(
   doc.setTextColor(...GRAY_900)
   doc.text('ACE™ Price Proposal', margin, 131)
 
-  // Client line
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(16)
-  doc.setTextColor(...GREEN)
-  doc.text(`Prepared for ${trunc(clientName, 34)}`, margin, 146)
+  // "Prepared for" line — bold dark, matches good-example styling
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(14)
+  doc.setTextColor(...GRAY_900)
+  doc.text(`Prepared for ${trunc(clientName, 34)}`, margin, 144)
 
   // Date + ref
   doc.setFont('helvetica', 'normal')
-  doc.setFontSize(10.5)
+  doc.setFontSize(10)
   doc.setTextColor(...GRAY_500)
-  doc.text(`${dateStr}  |  Ref: ${ref}`, margin, 158)
+  doc.text(`${dateStr}  |  Ref: ${ref}`, margin, 155)
 
   // Confidential notice
   doc.setFontSize(8)
   doc.setTextColor(...GRAY_400)
-  doc.text('CONFIDENTIAL — Prepared exclusively for the named recipient', margin, pageH - 32)
+  doc.text('CONFIDENTIAL — Prepared exclusively for the named recipient.', margin, pageH - 32)
 
-  // Bottom footer (cover)
+  // Bottom footer bar (cover)
   doc.setFillColor(...GREEN)
   doc.rect(0, pageH - 20, pageW - stripW, 20, 'F')
   doc.setFillColor(...GREEN_DARK)
@@ -304,18 +316,20 @@ export async function generatePDFQuote(
   // ══════════════════════════════════════════════════════════════════════════
   // CONTENT PAGES — page 2 onward
   // ══════════════════════════════════════════════════════════════════════════
+
   doc.addPage()
   drawPageHeader(doc, pageW, margin, ref)
-  let y = 26
+  let y = 17
 
   // ── SECTION: Client & Proposal Info ──────────────────────────────────────
+
   y = ensureSpace(doc, y, 55, pageH, margin, ref, pageW)
   y = drawSectionHeader(doc, y, 'Proposal Details', 'Client & Proposal Information', margin, pageW)
 
-  const colW     = (cW - 6) / 2
-  const colRx    = margin + colW + 6
+  const colW  = (cW - 6) / 2
+  const colRx = margin + colW + 6
 
-  // Column heading labels
+  // Column heading pills
   const colLabelH = 7
   doc.setFillColor(...GREEN)
   doc.roundedRect(margin, y, colW, colLabelH, 1.5, 1.5, 'F')
@@ -324,7 +338,7 @@ export async function generatePDFQuote(
   doc.setFontSize(7.5)
   doc.setTextColor(...WHITE)
   doc.text('Prepared For', margin + colW / 2, y + 4.8, { align: 'center' })
-  doc.text('Prepared By', colRx + colW / 2, y + 4.8, { align: 'center' })
+  doc.text('Prepared By',  colRx  + colW / 2, y + 4.8, { align: 'center' })
   y += colLabelH + 1
 
   const clientRows = ([
@@ -346,11 +360,11 @@ export async function generatePDFQuote(
   const rowH    = 6.8
 
   for (let i = 0; i < maxRows; i++) {
-    const ry = y + i * rowH
+    const ry        = y + i * rowH
     const fillColor: RGB = i % 2 === 0 ? [249, 250, 251] : WHITE
     doc.setFillColor(...fillColor)
     doc.rect(margin, ry, colW, rowH, 'F')
-    doc.rect(colRx, ry, colW, rowH, 'F')
+    doc.rect(colRx,  ry, colW, rowH, 'F')
 
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(7.5)
@@ -365,74 +379,90 @@ export async function generatePDFQuote(
     if (salesRows[i])  doc.text(trunc(salesRows[i][1], 28),  colRx  + 22, ry + 4.5)
   }
 
-  // Light border around both columns
   doc.setDrawColor(...GRAY_200)
   doc.setLineWidth(0.3)
   doc.roundedRect(margin, y, colW, maxRows * rowH, 1, 1, 'S')
-  doc.roundedRect(colRx, y, colW, maxRows * rowH, 1, 1, 'S')
+  doc.roundedRect(colRx,  y, colW, maxRows * rowH, 1, 1, 'S')
 
   y += maxRows * rowH + 10
 
   // ── SECTION: Executive Summary ────────────────────────────────────────────
+  // Uses green brand colors (not indigo) — generous padding prevents overflow.
+
   const execSummary = generateExecutiveSummary(analysis, recommendation, quoteState)
-  const execLines   = doc.splitTextToSize(execSummary, cW - 14) as string[]
-  const execH       = execLines.length * 5.2 + 14
+  const execLines   = doc.splitTextToSize(execSummary, cW - 16) as string[]
+  const execH       = execLines.length * 5.5 + 18    // 9mm top pad + lines + 9mm bottom pad
   y = ensureSpace(doc, y, execH + 16, pageH, margin, ref, pageW)
   y = drawSectionHeader(doc, y, 'Why This Matters', 'Executive Summary', margin, pageW)
 
-  doc.setFillColor(...INDIGO_50)
+  doc.setFillColor(...GREEN_50)
   doc.roundedRect(margin, y, cW, execH, 2, 2, 'F')
-  doc.setFillColor(...INDIGO_600)
+  doc.setFillColor(...GREEN)
   doc.rect(margin, y, 3.5, execH, 'F')
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9.5)
   doc.setTextColor(...GRAY_700)
-  doc.text(execLines, margin + 8, y + 7)
+  doc.text(execLines, margin + 10, y + 9)
   y += execH + 10
 
   // ── SECTION: Website Analysis Summary ────────────────────────────────────
-  const kpiH = 24
-  y = ensureSpace(doc, y, kpiH + 60, pageH, margin, ref, pageW)
+  // 2 × 2 KPI layout: each cell is (cW-4)/2 ≈ 87 mm wide — eliminates any
+  // risk of label text wrapping inside cramped narrow dashboard-style cells.
+
+  const halfW   = (cW - 4) / 2   // ~87 mm per cell
+  const kpiRowH = 28              // height of each KPI row
+
+  y = ensureSpace(doc, y, 80, pageH, margin, ref, pageW)
   y = drawSectionHeader(doc, y, 'Sitemap Classification Results', 'Website Analysis Summary', margin, pageW)
 
-  // 4-cell KPI row
-  const cellW = cW / 4
-  doc.setFillColor(...GRAY_100)
-  doc.roundedRect(margin, y, cW, kpiH, 2, 2, 'F')
-
-  const kpis: [string, string, string?][] = [
-    ['Raw Pages Found',   analysis.rawPageCount.toLocaleString()],
-    ['Weighted Pages',    analysis.weightedPageCount.toLocaleString()],
-    ['Weight Reduction',  `${recommendation.weightReductionPercent.toFixed(1)}%`],
-    ['Platform',          analysis.platform,  `${analysis.platformConfidence} confidence`],
+  // 2 rows × 2 columns of KPI stats
+  const kpis2x2: Array<[[string, string, string?], [string, string, string?]]> = [
+    [
+      ['Raw Pages Found',   analysis.rawPageCount.toLocaleString()],
+      ['Weighted Pages',    analysis.weightedPageCount.toLocaleString()],
+    ],
+    [
+      ['Weight Reduction',  `${recommendation.weightReductionPercent.toFixed(1)}%`],
+      ['Platform Detected', analysis.platform, `${analysis.platformConfidence} confidence`],
+    ],
   ]
 
-  kpis.forEach(([label, value, sub], i) => {
-    const cx = margin + i * cellW
-    if (i > 0) {
-      doc.setDrawColor(...GRAY_200)
-      doc.setLineWidth(0.3)
-      doc.line(cx, y + 2, cx, y + kpiH - 2)
-    }
-    const midX = cx + cellW / 2
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(7)
-    doc.setTextColor(...GRAY_500)
-    doc.text(label, midX, y + 6, { align: 'center' })
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(13)
-    doc.setTextColor(...GRAY_900)
-    doc.text(value, midX, y + 16, { align: 'center' })
-    if (sub) {
+  for (let rowIdx = 0; rowIdx < kpis2x2.length; rowIdx++) {
+    const ry   = y + rowIdx * (kpiRowH + 2)
+    const rightX = margin + halfW + 4
+
+    const cells: [number, [string, string, string?]][] = [
+      [margin, kpis2x2[rowIdx][0]],
+      [rightX, kpis2x2[rowIdx][1]],
+    ]
+
+    for (const [cx, [label, value, sub]] of cells) {
+      const midX = cx + halfW / 2
+      doc.setFillColor(...GRAY_100)
+      doc.roundedRect(cx, ry, halfW, kpiRowH, 2, 2, 'F')
+      // Label (small, above value)
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(6.5)
-      doc.setTextColor(...GRAY_400)
-      doc.text(sub, midX, y + 21.5, { align: 'center' })
+      doc.setTextColor(...GRAY_500)
+      doc.text(label, midX, ry + 7, { align: 'center' })
+      // Value (large, prominent)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(16)
+      doc.setTextColor(...GRAY_900)
+      doc.text(value, midX, ry + 19, { align: 'center' })
+      // Sub-label (confidence, etc.)
+      if (sub) {
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(6)
+        doc.setTextColor(...GRAY_400)
+        doc.text(sub, midX, ry + 25, { align: 'center' })
+      }
     }
-  })
-  y += kpiH + 6
+  }
+  // Advance past both rows (2 × 28 mm) plus the inter-row gap (2 mm) and spacing
+  y += 2 * kpiRowH + 2 + 6
 
-  // Category breakdown mini-table
+  // Category breakdown table
   const topCategories = [...analysis.categories]
     .sort((a, b) => b.weightedCount - a.weightedCount)
     .slice(0, 8)
@@ -475,37 +505,40 @@ export async function generatePDFQuote(
   })
   y = ((doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? y + 35) + 6
 
-  // Weighted pricing impact callout (amber)
+  // Weighted pricing impact callout (amber) — dynamically sized to fit text
   if (recommendation.rawPlan && recommendation.annualSavings > 0) {
-    y = ensureSpace(doc, y, 18, pageH, margin, ref, pageW)
+    const impactStr = (
+      `Without weighted pricing: ${recommendation.rawPlan.name} at ${fmt(recommendation.rawMonthlyPrice)}/mo  ·  ` +
+      `Client saves ${fmt(recommendation.annualSavings)}/yr with effort-based pricing.`
+    )
+    const impactLines = doc.splitTextToSize(impactStr, cW - 16) as string[]
+    const impactH     = impactLines.length * 5.2 + 14
+
+    y = ensureSpace(doc, y, impactH + 4, pageH, margin, ref, pageW)
     doc.setFillColor(...AMBER_50)
-    doc.roundedRect(margin, y, cW, 17, 2, 2, 'F')
+    doc.roundedRect(margin, y, cW, impactH, 2, 2, 'F')
     doc.setFillColor(...AMBER_600)
-    doc.rect(margin, y, 3.5, 17, 'F')
+    doc.rect(margin, y, 3.5, impactH, 'F')
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(7.5)
     doc.setTextColor(...AMBER_600)
-    doc.text('WEIGHTED PRICING IMPACT', margin + 8, y + 5.5)
+    doc.text('WEIGHTED PRICING IMPACT', margin + 8, y + 6)
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(9)
     doc.setTextColor(...GRAY_700)
-    doc.text(
-      `Without weighted pricing: ${recommendation.rawPlan.name} at ${fmt(recommendation.rawMonthlyPrice)}/mo  ·  ` +
-      `Client saves ${fmt(recommendation.annualSavings)}/yr with effort-based pricing.`,
-      margin + 8, y + 13,
-    )
-    y += 23
+    doc.text(impactLines, margin + 8, y + 11)
+    y += impactH + 6
   }
 
   // ── SECTION: Plan Summary ─────────────────────────────────────────────────
+
   y = ensureSpace(doc, y, 42, pageH, margin, ref, pageW)
   y = drawSectionHeader(doc, y, 'Recommended Service', 'Plan Summary', margin, pageW)
 
-  // Plan card
   doc.setFillColor(...GREEN_50)
   doc.roundedRect(margin, y, cW, 26, 2, 2, 'F')
   doc.setFillColor(...GREEN)
-  doc.roundedRect(margin, y, 4, 26, 2, 2, 'F')   // left accent bar
+  doc.roundedRect(margin, y, 4, 26, 2, 2, 'F')
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(15)
@@ -525,6 +558,7 @@ export async function generatePDFQuote(
   y += 32
 
   // ── SECTION: What's Included ──────────────────────────────────────────────
+
   y = ensureSpace(doc, y, 40, pageH, margin, ref, pageW)
   y = drawSectionHeader(doc, y, 'Service Scope', "What's Included", margin, pageW)
 
@@ -534,7 +568,7 @@ export async function generatePDFQuote(
   )
 
   for (const feature of features) {
-    const lines = doc.splitTextToSize(feature, cW - 10) as string[]
+    const lines    = doc.splitTextToSize(feature, cW - 10) as string[]
     const featureH = lines.length * 4.9 + 3
     y = ensureSpace(doc, y, featureH, pageH, margin, ref, pageW)
     drawCheckmark(doc, margin, y)
@@ -547,6 +581,7 @@ export async function generatePDFQuote(
   y += 6
 
   // ── SECTION: Pricing ──────────────────────────────────────────────────────
+
   y = ensureSpace(doc, y, 80, pageH, margin, ref, pageW)
   y = drawSectionHeader(doc, y, 'Investment Overview', 'Pricing', margin, pageW)
 
@@ -572,8 +607,8 @@ export async function generatePDFQuote(
     pricingBody.push([`Additional VPATs (${quoteState.additionalVpats}, one-time)`, '—', fmt(quote.oneTimeVpatCost)])
   }
 
-  const discountPct     = quoteState.discount ?? 0
-  const discountMonthly = discountPct > 0 ? Math.round(quote.monthlyTotal * discountPct / 100) : 0
+  const discountPct          = quoteState.discount ?? 0
+  const discountMonthly      = discountPct > 0 ? Math.round(quote.monthlyTotal * discountPct / 100) : 0
   const monthlyAfterDiscount = quote.monthlyTotal - discountMonthly
   const annualAfterDiscount  = monthlyAfterDiscount * 12
 
@@ -626,7 +661,7 @@ export async function generatePDFQuote(
 
   y = ((doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? y + 35) + 8
 
-  // Year-1 total callout
+  // Year-1 total callout (shown only when one-time fees exist)
   if (quote.totalOneTime > 0) {
     y = ensureSpace(doc, y, 16, pageH, margin, ref, pageW)
     doc.setFillColor(...GREEN_50)
@@ -644,13 +679,20 @@ export async function generatePDFQuote(
     y += 20
   }
 
-  // Savings callout (if relevant)
+  // Savings callout (amber) — dynamically sized, no fixed-height text overflow
   if (recommendation.rawPlan && recommendation.annualSavings > 0) {
-    y = ensureSpace(doc, y, 22, pageH, margin, ref, pageW)
+    const savingsStr = (
+      `Without weighted pricing: ${recommendation.rawPlan.name} at ${fmt(recommendation.rawMonthlyPrice)}/mo.  ` +
+      `Client saves ${fmt(recommendation.annualSavings)}/yr.`
+    )
+    const savingsLines = doc.splitTextToSize(savingsStr, cW - 16) as string[]
+    const savingsH     = savingsLines.length * 5.2 + 14
+
+    y = ensureSpace(doc, y, savingsH + 4, pageH, margin, ref, pageW)
     doc.setFillColor(...AMBER_50)
-    doc.roundedRect(margin, y, cW, 20, 2, 2, 'F')
+    doc.roundedRect(margin, y, cW, savingsH, 2, 2, 'F')
     doc.setFillColor(...AMBER_600)
-    doc.rect(margin, y, 3.5, 20, 'F')
+    doc.rect(margin, y, 3.5, savingsH, 'F')
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(7.5)
     doc.setTextColor(...AMBER_600)
@@ -658,19 +700,16 @@ export async function generatePDFQuote(
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(9)
     doc.setTextColor(...GRAY_700)
-    doc.text(
-      `Without weighted pricing: ${recommendation.rawPlan.name} at ${fmt(recommendation.rawMonthlyPrice)}/mo.  ` +
-      `Client saves ${fmt(recommendation.annualSavings)}/yr.`,
-      margin + 8, y + 15,
-    )
-    y += 26
+    doc.text(savingsLines, margin + 8, y + 12)
+    y += savingsH + 6
   }
 
   // ── SECTION: Scope & Timeline ─────────────────────────────────────────────
+
   const scopeRows: [string, string][] = []
-  if (quoteState.estimatedStart?.trim())     scopeRows.push(['Estimated Start',        formatDateValue(quoteState.estimatedStart)])
-  if (quoteState.remediationTimeline?.trim()) scopeRows.push(['Initial Remediation',   quoteState.remediationTimeline])
-  if (quoteState.contractDuration?.trim())   scopeRows.push(['Contract Duration',       quoteState.contractDuration])
+  if (quoteState.estimatedStart?.trim())      scopeRows.push(['Estimated Start',     formatDateValue(quoteState.estimatedStart)])
+  if (quoteState.remediationTimeline?.trim()) scopeRows.push(['Initial Remediation', quoteState.remediationTimeline])
+  if (quoteState.contractDuration?.trim())    scopeRows.push(['Contract Duration',   quoteState.contractDuration])
 
   if (scopeRows.length > 0) {
     const scopeH = scopeRows.length * 7.5 + 6
@@ -717,6 +756,7 @@ export async function generatePDFQuote(
   }
 
   // ── SECTION: Notes (if any) ───────────────────────────────────────────────
+
   if (quoteState.notes?.trim()) {
     const noteLines = doc.splitTextToSize(quoteState.notes, cW) as string[]
     const noteH     = noteLines.length * 5.2 + 6
@@ -730,6 +770,7 @@ export async function generatePDFQuote(
   }
 
   // ── SECTION: Standard Terms ───────────────────────────────────────────────
+
   y = ensureSpace(doc, y, 50, pageH, margin, ref, pageW)
   y = drawSectionHeader(doc, y, 'Agreement Conditions', 'Standard Terms', margin, pageW)
 
@@ -754,7 +795,8 @@ export async function generatePDFQuote(
   }
   y += 8
 
-  // ── CTA / Closing line ────────────────────────────────────────────────────
+  // ── CTA / Closing contact line ────────────────────────────────────────────
+
   y = ensureSpace(doc, y, 18, pageH, margin, ref, pageW)
   doc.setDrawColor(...GRAY_200)
   doc.setLineWidth(0.25)
@@ -771,6 +813,7 @@ export async function generatePDFQuote(
   doc.text(ctaLine, pageW / 2, y, { align: 'center' })
 
   // ── Footers on all content pages ──────────────────────────────────────────
+
   const totalPages = doc.getNumberOfPages()
   for (let p = 2; p <= totalPages; p++) {
     doc.setPage(p)
