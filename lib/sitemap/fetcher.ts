@@ -1,18 +1,25 @@
 import { parseSitemapXml, deduplicateUrls } from './parser'
+import { parseHtmlSitemap, detectContentType } from './html-parser'
 
-const MAX_CHILD_SITEMAPS = 75    // max child sitemaps to follow per index
-const MAX_RECURSION_DEPTH = 3    // max nested sitemap index depth
-const FETCH_TIMEOUT_MS = 15000
+const MAX_CHILD_SITEMAPS    = 75   // max child sitemaps per index
+const MAX_HTML_SUB_SITEMAPS = 20   // max sub-sitemap pages crawled from an HTML sitemap
+const MAX_RECURSION_DEPTH   = 3
+const FETCH_TIMEOUT_MS      = 15000
 
 export interface FetchedSitemapResult {
   urls: string[]
-  /** Maps each URL to the label of the child sitemap it came from */
+  /** Maps each URL to the label of the sitemap it came from */
   urlSourceMap: Map<string, string>
   assetUrlsFiltered: number
   subSitemapsTotal: number
 }
 
-async function fetchWithTimeout(url: string): Promise<string> {
+interface FetchResponse {
+  body: string
+  contentType: string
+}
+
+async function fetchWithTimeout(url: string): Promise<FetchResponse> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
   try {
@@ -20,40 +27,54 @@ async function fetchWithTimeout(url: string): Promise<string> {
       signal: controller.signal,
       headers: {
         'User-Agent': 'ACE-Sitemap-Classifier/1.0 (AccessibilityChecker.org)',
-        Accept: 'application/xml,text/xml,application/x-gzip,*/*',
+        Accept: 'text/html,application/xml,text/xml,application/x-gzip,*/*',
       },
     })
     if (!response.ok) {
       throw new Error(`HTTP ${response.status} for ${url}`)
     }
-    return await response.text()
+    const contentType = response.headers.get('content-type') ?? ''
+    const body = await response.text()
+    return { body, contentType }
   } finally {
     clearTimeout(timer)
   }
 }
 
-/**
- * Extract a short human-readable label from a sitemap URL.
- * e.g. https://example.com/sitemap_products_1.xml → "sitemap_products_1"
- *      https://example.com/sitemaps/blog-sitemap.xml → "blog-sitemap"
- */
 function extractSitemapLabel(url: string): string {
   try {
     const u = new URL(url)
     const segments = u.pathname.split('/').filter(Boolean)
-    const filename = segments[segments.length - 1] || ''
-    // Strip extension
-    return filename.replace(/\.(xml|txt|gz|php)$/i, '') || 'sitemap'
+    const last = segments[segments.length - 1] || ''
+    return last.replace(/\.(xml|txt|gz|php)$/i, '') || segments[segments.length - 2] || 'sitemap'
   } catch {
     return 'sitemap'
   }
 }
 
 /**
- * Recursively fetch a sitemap URL, following child sitemaps if it's a sitemapindex.
- * Returns all page URLs with their source sitemap labels.
+ * Derive a human-readable section label from a sub-sitemap URL.
+ * e.g. /sitemap/brands/ → "brands" | sitemap_products_1.xml → "sitemap_products_1"
  */
-async function fetchSitemapRecursive(
+function labelFromSubSitemapUrl(url: string): string {
+  try {
+    const u = new URL(url)
+    const segments = u.pathname.split('/').filter(Boolean)
+    // If path is like /sitemap/brands/, return "brands"
+    if (segments.length >= 2 && segments[0].toLowerCase() === 'sitemap') {
+      return segments[1].replace(/\.(xml|php|html?)$/i, '')
+    }
+    // Filename-based label
+    const last = segments[segments.length - 1] || ''
+    return last.replace(/\.(xml|php|html?|txt|gz)$/i, '') || 'sitemap'
+  } catch {
+    return 'sitemap'
+  }
+}
+
+// ── Recursive XML sitemap fetcher ────────────────────────────────────────────
+
+async function fetchXmlSitemapRecursive(
   sitemapUrl: string,
   label: string,
   depth: number,
@@ -63,83 +84,119 @@ async function fetchSitemapRecursive(
   progressBase: number,
   progressRange: number
 ): Promise<{ urls: string[]; assetsFiltered: number; childCount: number }> {
-  if (depth > MAX_RECURSION_DEPTH) {
-    console.warn(`Max recursion depth reached for ${sitemapUrl}`)
-    return { urls: [], assetsFiltered: 0, childCount: 0 }
-  }
+  if (depth > MAX_RECURSION_DEPTH) return { urls: [], assetsFiltered: 0, childCount: 0 }
 
-  const normalisedSitemapUrl = sitemapUrl.toLowerCase().split('?')[0]
-  if (visitedSitemaps.has(normalisedSitemapUrl)) {
-    return { urls: [], assetsFiltered: 0, childCount: 0 }
-  }
-  visitedSitemaps.add(normalisedSitemapUrl)
+  const normKey = sitemapUrl.toLowerCase().split('?')[0]
+  if (visitedSitemaps.has(normKey)) return { urls: [], assetsFiltered: 0, childCount: 0 }
+  visitedSitemaps.add(normKey)
 
-  let xmlContent: string
+  let resp: FetchResponse
   try {
-    xmlContent = await fetchWithTimeout(sitemapUrl)
+    resp = await fetchWithTimeout(sitemapUrl)
   } catch (err) {
-    console.warn(`Failed to fetch sitemap ${sitemapUrl}:`, err)
+    console.warn(`Failed to fetch ${sitemapUrl}:`, err)
     return { urls: [], assetsFiltered: 0, childCount: 0 }
   }
 
-  const parsed = parseSitemapXml(xmlContent)
+  const parsed = parseSitemapXml(resp.body)
 
   if (parsed.type === 'sitemapindex') {
-    // This is an index — recurse into child sitemaps
     const childUrls = parsed.sitemapUrls.slice(0, MAX_CHILD_SITEMAPS)
-    const totalChildren = childUrls.length
     const allUrls: string[] = []
-    let totalAssetsFiltered = 0
+    let totalAssets = 0
 
     for (let i = 0; i < childUrls.length; i++) {
       const childUrl = childUrls[i]
       const childLabel = extractSitemapLabel(childUrl)
-      const childProgress = progressBase + Math.floor((i / totalChildren) * progressRange)
+      const pct = progressBase + Math.floor((i / childUrls.length) * progressRange)
+      onProgress('Fetching sub-sitemaps', `[${i + 1}/${childUrls.length}] ${childLabel}`, pct)
 
-      onProgress(
-        'Fetching sub-sitemaps',
-        `[${i + 1}/${totalChildren}] ${childLabel}`,
-        childProgress
+      const childResult = await fetchXmlSitemapRecursive(
+        childUrl, childLabel, depth + 1, visitedSitemaps, urlSourceMap,
+        onProgress, pct, Math.floor(progressRange / childUrls.length)
       )
-
-      const childResult = await fetchSitemapRecursive(
-        childUrl,
-        childLabel,
-        depth + 1,
-        visitedSitemaps,
-        urlSourceMap,
-        onProgress,
-        childProgress,
-        Math.floor(progressRange / totalChildren)
-      )
-
-      // Tag each URL with its source label
-      for (const url of childResult.urls) {
-        if (!urlSourceMap.has(url)) {
-          urlSourceMap.set(url, childLabel)
-        }
+      for (const u of childResult.urls) {
+        if (!urlSourceMap.has(u)) urlSourceMap.set(u, childLabel)
       }
-
       allUrls.push(...childResult.urls)
-      totalAssetsFiltered += childResult.assetsFiltered
+      totalAssets += childResult.assetsFiltered
     }
-
-    return { urls: allUrls, assetsFiltered: totalAssetsFiltered, childCount: totalChildren }
+    return { urls: allUrls, assetsFiltered: totalAssets, childCount: childUrls.length }
   }
 
-  // Regular urlset — tag all URLs with this sitemap's label
-  for (const url of parsed.urls) {
-    if (!urlSourceMap.has(url)) {
-      urlSourceMap.set(url, label)
-    }
+  // Regular urlset
+  for (const u of parsed.urls) {
+    if (!urlSourceMap.has(u)) urlSourceMap.set(u, label)
   }
-
-  return {
-    urls: parsed.urls,
-    assetsFiltered: parsed.assetUrlsFiltered,
-    childCount: 0,
-  }
+  return { urls: parsed.urls, assetsFiltered: parsed.assetUrlsFiltered, childCount: 0 }
 }
+
+// ── HTML sitemap crawler ──────────────────────────────────────────────────────
+
+async function crawlHtmlSitemap(
+  startUrl: string,
+  onProgress: (step: string, detail: string, percent: number) => void
+): Promise<{ urls: string[]; urlSourceMap: Map<string, string> }> {
+  const urlSourceMap = new Map<string, string>()
+  const seenSitemapPages = new Set<string>()
+  const allPageLinks: Array<{ url: string; sectionLabel: string }> = []
+
+  // Queue of HTML sitemap pages to fetch
+  const queue: Array<{ url: string; label: string }> = [
+    { url: startUrl, label: labelFromSubSitemapUrl(startUrl) }
+  ]
+  seenSitemapPages.add(startUrl.toLowerCase().split('?')[0])
+
+  let processed = 0
+
+  while (queue.length > 0 && processed < MAX_HTML_SUB_SITEMAPS) {
+    const { url, label } = queue.shift()!
+    processed++
+
+    onProgress(
+      'Crawling HTML sitemap',
+      `Fetching section: ${label} (${processed}/${Math.min(queue.length + processed, MAX_HTML_SUB_SITEMAPS)})`,
+      15 + Math.min(processed * 4, 60)
+    )
+
+    let resp: FetchResponse
+    try {
+      resp = await fetchWithTimeout(url)
+    } catch (err) {
+      console.warn(`Failed to fetch HTML sitemap page ${url}:`, err)
+      continue
+    }
+
+    const { pageLinks, subSitemapLinks } = parseHtmlSitemap(resp.body, url)
+
+    // Collect page links
+    for (const { url: pageUrl, sectionLabel } of pageLinks) {
+      allPageLinks.push({ url: pageUrl, sectionLabel: sectionLabel !== 'sitemap' ? sectionLabel : label })
+    }
+
+    // Enqueue discovered sub-sitemap pages
+    for (const subUrl of subSitemapLinks) {
+      const normKey = subUrl.toLowerCase().split('?')[0]
+      if (!seenSitemapPages.has(normKey) && queue.length + processed < MAX_HTML_SUB_SITEMAPS) {
+        seenSitemapPages.add(normKey)
+        const subLabel = labelFromSubSitemapUrl(subUrl)
+        queue.push({ url: subUrl, label: subLabel })
+      }
+    }
+  }
+
+  // Build the source map (first label wins for duplicates)
+  for (const { url: pageUrl, sectionLabel } of allPageLinks) {
+    if (!urlSourceMap.has(pageUrl)) {
+      urlSourceMap.set(pageUrl, sectionLabel.toLowerCase())
+    }
+  }
+
+  const urls = allPageLinks.map((l) => l.url)
+  return { urls, urlSourceMap }
+}
+
+// ── Main exported function ────────────────────────────────────────────────────
 
 export async function fetchSitemapUrls(
   sitemapUrl: string,
@@ -147,75 +204,82 @@ export async function fetchSitemapUrls(
 ): Promise<FetchedSitemapResult> {
   onProgress('Fetching sitemap', `Downloading ${sitemapUrl}`, 5)
 
-  const urlSourceMap = new Map<string, string>()
-  const visitedSitemaps = new Set<string>()
-
-  let xmlContent: string
+  let resp: FetchResponse
   try {
-    xmlContent = await fetchWithTimeout(sitemapUrl)
+    resp = await fetchWithTimeout(sitemapUrl)
   } catch (err) {
     throw new Error(
       `Failed to fetch sitemap: ${err instanceof Error ? err.message : String(err)}`
     )
   }
 
-  onProgress('Parsing sitemap', 'Detecting sitemap structure', 15)
-  const parsed = parseSitemapXml(xmlContent)
+  onProgress('Parsing sitemap', 'Detecting sitemap format', 12)
+
+  const format = detectContentType(resp.body, resp.contentType)
+
+  // ── HTML sitemap path ─────────────────────────────────────────────────────
+  if (format === 'html') {
+    onProgress('HTML sitemap detected', 'Parsing sections and links', 15)
+
+    const { urls: rawUrls, urlSourceMap } = await crawlHtmlSitemap(sitemapUrl, onProgress)
+
+    onProgress('Deduplicating URLs', `Processing ${rawUrls.length} links`, 82)
+    const deduplicated = deduplicateUrls(rawUrls)
+
+    // Rebuild source map for deduplicated URLs
+    const deduplicatedSourceMap = new Map<string, string>()
+    for (const url of deduplicated) {
+      const label = urlSourceMap.get(url)
+      if (label) deduplicatedSourceMap.set(url, label)
+    }
+
+    onProgress('Complete', `Found ${deduplicated.length} pages from HTML sitemap`, 95)
+    return {
+      urls: deduplicated,
+      urlSourceMap: deduplicatedSourceMap,
+      assetUrlsFiltered: 0,
+      subSitemapsTotal: 0,
+    }
+  }
+
+  // ── XML sitemap path ──────────────────────────────────────────────────────
+  onProgress('XML sitemap detected', 'Analysing structure', 15)
+  const parsed = parseSitemapXml(resp.body)
+  const urlSourceMap = new Map<string, string>()
+  const visitedSitemaps = new Set<string>()
+  visitedSitemaps.add(sitemapUrl.toLowerCase().split('?')[0])
 
   let allUrls: string[] = []
   let totalAssetsFiltered = 0
   let subSitemapsTotal = 0
 
   if (parsed.type === 'sitemapindex') {
-    const childSitemapUrls = parsed.sitemapUrls.slice(0, MAX_CHILD_SITEMAPS)
-    subSitemapsTotal = childSitemapUrls.length
+    const childUrls = parsed.sitemapUrls.slice(0, MAX_CHILD_SITEMAPS)
+    subSitemapsTotal = childUrls.length
 
-    onProgress(
-      'Sitemap index detected',
-      `Found ${subSitemapsTotal} child sitemaps — fetching all`,
-      20
-    )
+    onProgress('Sitemap index detected', `Found ${subSitemapsTotal} child sitemaps`, 20)
 
-    // Mark root as visited to avoid circular reference
-    visitedSitemaps.add(sitemapUrl.toLowerCase().split('?')[0])
-
-    for (let i = 0; i < childSitemapUrls.length; i++) {
-      const childUrl = childSitemapUrls[i]
+    for (let i = 0; i < childUrls.length; i++) {
+      const childUrl = childUrls[i]
       const childLabel = extractSitemapLabel(childUrl)
-      const progressPercent = 20 + Math.floor((i / subSitemapsTotal) * 65)
+      const pct = 20 + Math.floor((i / subSitemapsTotal) * 65)
 
-      onProgress(
-        'Fetching sub-sitemaps',
-        `[${i + 1}/${subSitemapsTotal}] ${childLabel}`,
-        progressPercent
+      onProgress('Fetching sub-sitemaps', `[${i + 1}/${subSitemapsTotal}] ${childLabel}`, pct)
+
+      const childResult = await fetchXmlSitemapRecursive(
+        childUrl, childLabel, 1, visitedSitemaps, urlSourceMap,
+        onProgress, pct, Math.floor(65 / subSitemapsTotal)
       )
 
-      const childResult = await fetchSitemapRecursive(
-        childUrl,
-        childLabel,
-        1,
-        visitedSitemaps,
-        urlSourceMap,
-        onProgress,
-        progressPercent,
-        Math.floor(65 / subSitemapsTotal)
-      )
-
-      for (const url of childResult.urls) {
-        if (!urlSourceMap.has(url)) {
-          urlSourceMap.set(url, childLabel)
-        }
+      for (const u of childResult.urls) {
+        if (!urlSourceMap.has(u)) urlSourceMap.set(u, childLabel)
       }
-
       allUrls.push(...childResult.urls)
       totalAssetsFiltered += childResult.assetsFiltered
     }
   } else {
-    // Single urlset — label all URLs with the root sitemap name
     const rootLabel = extractSitemapLabel(sitemapUrl)
-    for (const url of parsed.urls) {
-      urlSourceMap.set(url, rootLabel)
-    }
+    for (const u of parsed.urls) urlSourceMap.set(u, rootLabel)
     allUrls = parsed.urls
     totalAssetsFiltered = parsed.assetUrlsFiltered
   }
@@ -223,8 +287,6 @@ export async function fetchSitemapUrls(
   onProgress('Deduplicating URLs', `Processing ${allUrls.length} raw URLs`, 87)
   const deduplicated = deduplicateUrls(allUrls)
 
-  // Rebuild the source map using the deduplicated canonical URLs
-  // (deduplication keeps the first occurrence, so the map should already be consistent)
   const deduplicatedSourceMap = new Map<string, string>()
   for (const url of deduplicated) {
     const label = urlSourceMap.get(url)
@@ -232,7 +294,6 @@ export async function fetchSitemapUrls(
   }
 
   onProgress('Complete', `Found ${deduplicated.length} unique pages`, 95)
-
   return {
     urls: deduplicated,
     urlSourceMap: deduplicatedSourceMap,

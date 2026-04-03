@@ -62,15 +62,27 @@ const ALWAYS_UNIQUE_CATEGORIES: ReadonlySet<PageCategory> = new Set([
  * when the URL itself is ambiguous.
  */
 const SITEMAP_LABEL_SIGNALS: Array<{ pattern: RegExp; category: PageCategory; confidence: number }> = [
-  { pattern: /product/i,    category: 'Product Pages',         confidence: 0.85 },
-  { pattern: /collection/i, category: 'Collection Pages',      confidence: 0.85 },
-  { pattern: /categor/i,    category: 'Category Pages',        confidence: 0.80 },
-  { pattern: /brand/i,      category: 'Brand Pages',           confidence: 0.85 },
-  { pattern: /blog/i,       category: 'Blog Posts',            confidence: 0.80 },
-  { pattern: /news/i,       category: 'Blog Posts',            confidence: 0.70 },
-  { pattern: /article/i,    category: 'Blog Posts',            confidence: 0.75 },
-  { pattern: /plant/i,      category: 'Plant / Database Pages',confidence: 0.85 },
-  { pattern: /page/i,       category: 'Static Pages',          confidence: 0.60 },
+  // XML child sitemap names (sitemap_products_1.xml → "sitemap_products_1")
+  // AND HTML sitemap section headings (h2 "Brands" → "brands", li > strong "Categories" → "categories")
+  { pattern: /product/i,    category: 'Product Pages',          confidence: 0.85 },
+  { pattern: /collection/i, category: 'Collection Pages',       confidence: 0.85 },
+  { pattern: /categor/i,    category: 'Category Pages',         confidence: 0.80 },
+  { pattern: /^brands?$/i,  category: 'Brand Pages',            confidence: 0.90 },
+  { pattern: /brand/i,      category: 'Brand Pages',            confidence: 0.85 },
+  { pattern: /manufactur/i, category: 'Brand Pages',            confidence: 0.80 },
+  { pattern: /^blogs?$/i,   category: 'Blog Posts',             confidence: 0.90 },
+  { pattern: /blog/i,       category: 'Blog Posts',             confidence: 0.80 },
+  { pattern: /news/i,       category: 'Blog Posts',             confidence: 0.70 },
+  { pattern: /article/i,    category: 'Blog Posts',             confidence: 0.75 },
+  { pattern: /plant/i,      category: 'Plant / Database Pages', confidence: 0.85 },
+  { pattern: /species/i,    category: 'Plant / Database Pages', confidence: 0.85 },
+  { pattern: /glossar/i,    category: 'Plant / Database Pages', confidence: 0.80 },
+  // HTML section headings for static/legal pages
+  { pattern: /^pages?$/i,   category: 'Static Pages',           confidence: 0.65 },
+  { pattern: /^legal$/i,    category: 'Policy / Legal Pages',   confidence: 0.80 },
+  { pattern: /^polic/i,     category: 'Policy / Legal Pages',   confidence: 0.80 },
+  { pattern: /^help$/i,     category: 'Help Center / Docs Pages', confidence: 0.80 },
+  { pattern: /^support$/i,  category: 'Help Center / Docs Pages', confidence: 0.75 },
 ]
 
 function getSitemapLabelSignal(
