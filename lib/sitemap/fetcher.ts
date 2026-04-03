@@ -1,5 +1,6 @@
 import { parseSitemapXml, deduplicateUrls } from './parser'
 import { parseHtmlSitemap, detectContentType } from './html-parser'
+import { discoverSitemapUrl } from './discovery'
 
 const MAX_CHILD_SITEMAPS    = 75   // max child sitemaps per index
 const MAX_HTML_SUB_SITEMAPS = 20   // max sub-sitemap pages crawled from an HTML sitemap
@@ -202,6 +203,14 @@ export async function fetchSitemapUrls(
   sitemapUrl: string,
   onProgress: (step: string, detail: string, percent: number) => void
 ): Promise<FetchedSitemapResult> {
+  // ── Auto-discovery: if user entered a root domain, find the real sitemap ───
+  onProgress('Discovering sitemap', `Checking ${sitemapUrl}`, 2)
+  const discovered = await discoverSitemapUrl(sitemapUrl)
+  if (discovered) {
+    onProgress('Sitemap found', `Discovered via ${discovered.method}`, 5)
+    sitemapUrl = discovered.url
+  }
+
   onProgress('Fetching sitemap', `Downloading ${sitemapUrl}`, 5)
 
   let resp: FetchResponse
