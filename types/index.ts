@@ -140,6 +140,31 @@ export interface QuoteCalculation {
   yearOneTotal: number
 }
 
+/**
+ * Represents one additional subdomain/subdirectory the user has added for analysis.
+ * Each subdomain is scanned independently and can be toggled in/out of the combined quote.
+ */
+export interface SubdomainEntry {
+  /** Unique client-side ID */
+  id: string
+  /** Sitemap URL for this subdomain (e.g. https://plants.countrymax.com/sitemap.php) */
+  sitemapUrl: string
+  /** Human-readable domain label extracted from the URL */
+  label: string
+  /** Current scan status */
+  status: 'idle' | 'scanning' | 'complete' | 'error'
+  /** Whether this subdomain is included in the combined quote total */
+  included: boolean
+  /** Analysis result once scan completes */
+  analysis: AnalysisResult | null
+  /** Error message if scan failed */
+  errorMessage?: string
+  /** Scan progress 0–100 */
+  progress?: number
+  /** Progress step label */
+  progressStep?: string
+}
+
 export interface AnalysisProgress {
   step: string
   detail: string

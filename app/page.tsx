@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import type {
   AnalysisResult,
   AnalysisProgress,
@@ -8,6 +8,7 @@ import type {
   QuoteBuilderState,
   QuoteCalculation,
   PricingRecommendation,
+  SubdomainEntry,
 } from '@/types'
 import { DEFAULT_WEIGHTS } from '@/config/pricing'
 import { getPricingRecommendation, calculateQuote } from '@/lib/pricing/engine'
@@ -22,6 +23,7 @@ import RecommendedTier from '@/components/RecommendedTier'
 import QuoteBuilder from '@/components/QuoteBuilder'
 import URLBreakdown from '@/components/URLBreakdown'
 import ExportSection from '@/components/ExportSection'
+import SubdomainManager from '@/components/SubdomainManager'
 
 const DEFAULT_PROGRESS: AnalysisProgress = {
   step: 'Starting...',
@@ -42,27 +44,103 @@ function getDefaultQuoteState(): QuoteBuilderState {
   }
 }
 
+function getDomain(url: string): string {
+  try { return new URL(url).hostname } catch { return url }
+}
+
+/** Stream an analysis from the API and return the completed AnalysisResult */
+async function streamAnalysis(
+  payload: {
+    type: 'url' | 'xml' | 'urls'
+    sitemapUrl?: string
+    weights: PageWeights
+  },
+  onProgress: (step: string, detail: string, percent: number) => void
+): Promise<AnalysisResult> {
+  const response = await fetch('/api/analyze', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+
+  if (!response.body) throw new Error('No response body from server')
+
+  const reader  = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+
+    buffer += decoder.decode(value, { stream: true })
+    const lines = buffer.split('\n\n')
+    buffer = lines.pop() || ''
+
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue
+      try {
+        const event = JSON.parse(line.slice(6))
+        if (event.type === 'progress') {
+          onProgress(event.step, event.detail, event.percent)
+        } else if (event.type === 'complete') {
+          return event.result as AnalysisResult
+        } else if (event.type === 'error') {
+          throw new Error(event.message)
+        }
+      } catch (parseErr) {
+        // Ignore malformed individual SSE frames
+        if (parseErr instanceof SyntaxError) continue
+        throw parseErr
+      }
+    }
+  }
+  throw new Error('Stream ended without a complete result')
+}
+
 export default function HomePage() {
-  const [weights, setWeights] = useState<PageWeights>(DEFAULT_WEIGHTS)
-  const [isLoading, setIsLoading] = useState(false)
-  const [progress, setProgress] = useState<AnalysisProgress>(DEFAULT_PROGRESS)
+  const [weights, setWeights]               = useState<PageWeights>(DEFAULT_WEIGHTS)
+  const [isLoading, setIsLoading]           = useState(false)
+  const [progress, setProgress]             = useState<AnalysisProgress>(DEFAULT_PROGRESS)
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
-  const [recommendation, setRecommendation] = useState<PricingRecommendation | null>(null)
-  const [quoteState, setQuoteState] = useState<QuoteBuilderState>(getDefaultQuoteState())
+  const [subdomains, setSubdomains]         = useState<SubdomainEntry[]>([])
+  const [quoteState, setQuoteState]         = useState<QuoteBuilderState>(getDefaultQuoteState())
+
+  // Track running subdomain scans so we can cancel them on page reset
+  const subdomainAbortRefs = useRef<Map<string, AbortController>>(new Map())
+
+  // ── Derived: combined weighted/raw counts ──────────────────────────────────
+  const includedSubdomains = subdomains.filter((s) => s.included && s.analysis)
+  const extraWeighted = includedSubdomains.reduce((n, s) => n + (s.analysis?.weightedPageCount ?? 0), 0)
+  const extraRaw      = includedSubdomains.reduce((n, s) => n + (s.analysis?.rawPageCount ?? 0), 0)
+  const combinedWeightedCount = (analysisResult?.weightedPageCount ?? 0) + extraWeighted
+  const combinedRawCount      = (analysisResult?.rawPageCount      ?? 0) + extraRaw
+
+  // ── Derived: recommendation based on COMBINED count ────────────────────────
+  const recommendation: PricingRecommendation | null = analysisResult
+    ? getPricingRecommendation(combinedWeightedCount, combinedRawCount)
+    : null
 
   const applyAnalysisResult = useCallback(
     (result: AnalysisResult) => {
-      const rec = getPricingRecommendation(result.weightedPageCount, result.rawPageCount)
       setAnalysisResult(result)
-      setRecommendation(rec)
-      setQuoteState((prev) => ({
-        ...prev,
-        basePlan: rec.weightedPlan,
-      }))
+      // Reset subdomains when a new primary analysis runs
+      setSubdomains([])
+      subdomainAbortRefs.current.clear()
+      const rec = getPricingRecommendation(result.weightedPageCount, result.rawPageCount)
+      setQuoteState((prev) => ({ ...prev, basePlan: rec.weightedPlan }))
     },
     []
   )
 
+  // Keep quoteState.basePlan in sync whenever the recommendation changes
+  // (e.g. when subdomains are toggled in/out)
+  const syncedQuoteState: QuoteBuilderState = {
+    ...quoteState,
+    basePlan: recommendation?.weightedPlan ?? quoteState.basePlan,
+  }
+
+  // ── Main domain analysis ───────────────────────────────────────────────────
   const handleAnalyze = useCallback(
     async (payload: {
       type: 'url' | 'xml' | 'urls'
@@ -73,82 +151,20 @@ export default function HomePage() {
     }) => {
       setIsLoading(true)
       setAnalysisResult(null)
-      setRecommendation(null)
-      setProgress({ ...DEFAULT_PROGRESS, step: 'Starting analysis...', detail: 'Connecting to server', percent: 2 })
+      setSubdomains([])
+      setProgress({ ...DEFAULT_PROGRESS, step: 'Starting analysis…', detail: 'Connecting to server', percent: 2 })
 
       try {
-        const response = await fetch('/api/analyze', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
-
-        if (!response.body) {
-          throw new Error('No response body')
-        }
-
-        const reader = response.body.getReader()
-        const decoder = new TextDecoder()
-        let buffer = ''
-
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-
-          buffer += decoder.decode(value, { stream: true })
-          const lines = buffer.split('\n\n')
-          buffer = lines.pop() || ''
-
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const event = JSON.parse(line.slice(6))
-
-                if (event.type === 'progress') {
-                  setProgress({
-                    step: event.step,
-                    detail: event.detail,
-                    percent: event.percent,
-                    isComplete: false,
-                    isError: false,
-                  })
-                } else if (event.type === 'complete') {
-                  setProgress({
-                    step: 'Complete',
-                    detail: 'Analysis finished',
-                    percent: 100,
-                    isComplete: true,
-                    isError: false,
-                  })
-                  applyAnalysisResult(event.result as AnalysisResult)
-                  setIsLoading(false)
-                } else if (event.type === 'error') {
-                  setProgress({
-                    step: 'Error',
-                    detail: event.message,
-                    percent: 0,
-                    isComplete: false,
-                    isError: true,
-                    errorMessage: event.message,
-                  })
-                  setIsLoading(false)
-                }
-              } catch {
-                // Ignore parse errors for individual events
-              }
-            }
-          }
-        }
+        const result = await streamAnalysis(
+          payload as { type: 'url' | 'xml' | 'urls'; sitemapUrl?: string; weights: PageWeights },
+          (step, detail, percent) => setProgress({ step, detail, percent, isComplete: false, isError: false })
+        )
+        setProgress({ step: 'Complete', detail: 'Analysis finished', percent: 100, isComplete: true, isError: false })
+        applyAnalysisResult(result)
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err)
-        setProgress({
-          step: 'Error',
-          detail: message,
-          percent: 0,
-          isComplete: false,
-          isError: true,
-          errorMessage: message,
-        })
+        setProgress({ step: 'Error', detail: message, percent: 0, isComplete: false, isError: true, errorMessage: message })
+      } finally {
         setIsLoading(false)
       }
     },
@@ -158,21 +174,17 @@ export default function HomePage() {
   const handleLoadDemo = useCallback(() => {
     setIsLoading(true)
     setAnalysisResult(null)
-    setRecommendation(null)
-
-    // Simulate realistic loading steps
+    setSubdomains([])
     const steps = [
       { step: 'Fetching sitemap', detail: 'Downloading gemstoneking.com/sitemap.xml', percent: 10 },
-      { step: 'Sitemap index detected', detail: 'Found 4 sub-sitemaps (products, collections, pages, blogs)', percent: 20 },
-      { step: 'Fetching sub-sitemaps', detail: 'Fetching sub-sitemap 1/4: /sitemap_products_1.xml', percent: 35 },
-      { step: 'Fetching sub-sitemaps', detail: 'Fetching sub-sitemap 2/4: /sitemap_collections_1.xml', percent: 50 },
-      { step: 'Fetching sub-sitemaps', detail: 'Fetching sub-sitemap 3/4: /sitemap_pages_1.xml', percent: 65 },
-      { step: 'Detecting platform', detail: 'Analyzing 6,387 URLs for platform signals', percent: 75 },
+      { step: 'Sitemap index detected', detail: 'Found 4 sub-sitemaps', percent: 20 },
+      { step: 'Fetching sub-sitemaps', detail: '[1/4] sitemap_products_1', percent: 40 },
+      { step: 'Fetching sub-sitemaps', detail: '[2/4] sitemap_collections_1', percent: 55 },
+      { step: 'Detecting platform', detail: 'Analysing 6,387 URLs', percent: 75 },
       { step: 'Classifying pages', detail: 'Classifying 6,387 URLs into categories', percent: 85 },
       { step: 'Calculating weights', detail: 'Computing weighted page counts', percent: 95 },
       { step: 'Complete', detail: 'Analysis finished — 6,387 pages classified', percent: 100 },
     ]
-
     let i = 0
     const interval = setInterval(() => {
       if (i < steps.length) {
@@ -180,46 +192,87 @@ export default function HomePage() {
         i++
       } else {
         clearInterval(interval)
-        // Apply demo data with the current weights
-        const demoWithWeights: AnalysisResult = { ...demoAnalysis, weights }
-        applyAnalysisResult(demoWithWeights)
+        applyAnalysisResult({ ...demoAnalysis, weights })
         setIsLoading(false)
       }
     }, 220)
   }, [weights, applyAnalysisResult])
 
-  const handleWeightsChange = useCallback(
-    (newWeights: PageWeights) => {
-      setWeights(newWeights)
-    },
-    []
-  )
+  // ── Subdomain management ──────────────────────────────────────────────────
 
-  const handleQuoteStateChange = useCallback((newState: QuoteBuilderState) => {
-    setQuoteState(newState)
+  const handleAddSubdomain = useCallback(async (sitemapUrl: string) => {
+    const id    = `sub_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
+    const label = getDomain(sitemapUrl)
+
+    const newEntry: SubdomainEntry = {
+      id,
+      sitemapUrl,
+      label,
+      status:   'scanning',
+      included: true,     // included by default — user can toggle off
+      analysis: null,
+      progress: 0,
+      progressStep: 'Starting…',
+    }
+
+    setSubdomains((prev) => [...prev, newEntry])
+
+    try {
+      const result = await streamAnalysis(
+        { type: 'url', sitemapUrl, weights },
+        (step, _detail, percent) => {
+          setSubdomains((prev) =>
+            prev.map((s) =>
+              s.id === id ? { ...s, progress: percent, progressStep: step } : s
+            )
+          )
+        }
+      )
+      setSubdomains((prev) =>
+        prev.map((s) =>
+          s.id === id
+            ? { ...s, status: 'complete', analysis: result, progress: 100, progressStep: 'Complete' }
+            : s
+        )
+      )
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setSubdomains((prev) =>
+        prev.map((s) =>
+          s.id === id ? { ...s, status: 'error', errorMessage: message } : s
+        )
+      )
+    }
+  }, [weights])
+
+  const handleRemoveSubdomain = useCallback((id: string) => {
+    subdomainAbortRefs.current.get(id)?.abort()
+    subdomainAbortRefs.current.delete(id)
+    setSubdomains((prev) => prev.filter((s) => s.id !== id))
   }, [])
 
+  const handleToggleSubdomainIncluded = useCallback((id: string) => {
+    setSubdomains((prev) =>
+      prev.map((s) => s.id === id ? { ...s, included: !s.included } : s)
+    )
+  }, [])
+
+  // ── Quote calc ────────────────────────────────────────────────────────────
   const quoteCalc: QuoteCalculation = recommendation
-    ? calculateQuote(quoteState)
+    ? calculateQuote(syncedQuoteState)
     : {
-        baseMonthly: 0,
-        extraDomainCost: 0,
-        dedicatedTeamCost: 0,
-        monthlyTotal: 0,
-        annualTotal: 0,
-        oneTimePdfCost: 0,
-        oneTimeVpatCost: 0,
-        totalOneTime: 0,
-        yearOneTotal: 0,
+        baseMonthly: 0, extraDomainCost: 0, dedicatedTeamCost: 0,
+        monthlyTotal: 0, annualTotal: 0,
+        oneTimePdfCost: 0, oneTimeVpatCost: 0, totalOneTime: 0, yearOneTotal: 0,
       }
+
+  const showResults = analysisResult && recommendation && !isLoading
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      {/* Hero intro */}
+      {/* Hero */}
       <div className="text-center pb-2">
-        <h1 className="text-2xl font-black text-gray-900 mb-2">
-          ACE™ Sitemap Page Classifier
-        </h1>
+        <h1 className="text-2xl font-black text-gray-900 mb-2">ACE™ Sitemap Page Classifier</h1>
         <p className="text-gray-500 text-sm max-w-xl mx-auto">
           Scan any sitemap, classify pages, detect template repetition, apply weighted pricing,
           and generate professional accessibility service quotes.
@@ -227,24 +280,16 @@ export default function HomePage() {
       </div>
 
       {/* Step 1: Load Sitemap */}
-      <LoadSitemap
-        weights={weights}
-        onAnalyze={handleAnalyze}
-        onLoadDemo={handleLoadDemo}
-        isLoading={isLoading}
-      />
+      <LoadSitemap weights={weights} onAnalyze={handleAnalyze} onLoadDemo={handleLoadDemo} isLoading={isLoading} />
 
       {/* Step 2: Page Weights */}
-      <PageWeightsEditor weights={weights} onChange={handleWeightsChange} />
+      <PageWeightsEditor weights={weights} onChange={setWeights} />
 
-      {/* Loading State */}
-      {isLoading && <LoadingState progress={progress} />}
-
-      {/* Error State */}
-      {!isLoading && progress.isError && <LoadingState progress={progress} />}
+      {/* Loading / Error state */}
+      {(isLoading || (!isLoading && progress.isError)) && <LoadingState progress={progress} />}
 
       {/* Results */}
-      {analysisResult && recommendation && !isLoading && (
+      {showResults && (
         <>
           {/* Step 3: Analysis Overview */}
           <AnalysisOverview analysis={analysisResult} />
@@ -252,15 +297,27 @@ export default function HomePage() {
           {/* Step 4: Page Categories */}
           <PageCategories analysis={analysisResult} />
 
-          {/* Step 5: Recommended Tier */}
+          {/* Subdomain Manager — sits between categories and recommended tier */}
+          <SubdomainManager
+            subdomains={subdomains}
+            weights={weights}
+            mainDomain={analysisResult.domain}
+            onAdd={handleAddSubdomain}
+            onRemove={handleRemoveSubdomain}
+            onToggleIncluded={handleToggleSubdomainIncluded}
+            combinedWeightedCount={combinedWeightedCount}
+            combinedRawCount={combinedRawCount}
+          />
+
+          {/* Step 5: Recommended Tier — uses combined count */}
           <RecommendedTier analysis={analysisResult} recommendation={recommendation} />
 
           {/* Step 6: Quote Builder */}
           <QuoteBuilder
-            quoteState={quoteState}
+            quoteState={syncedQuoteState}
             quoteCalc={quoteCalc}
             recommendation={recommendation}
-            onChange={handleQuoteStateChange}
+            onChange={setQuoteState}
           />
 
           {/* Step 7: URL Breakdown */}
@@ -271,12 +328,12 @@ export default function HomePage() {
             analysis={analysisResult}
             recommendation={recommendation}
             quoteCalc={quoteCalc}
-            quoteState={quoteState}
+            quoteState={syncedQuoteState}
           />
         </>
       )}
 
-      {/* Empty state prompt */}
+      {/* Empty state */}
       {!analysisResult && !isLoading && !progress.isError && (
         <div className="text-center py-16 text-gray-400">
           <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">

@@ -94,7 +94,7 @@ export default function LoadSitemap({ weights, onAnalyze, onLoadDemo, isLoading 
                 type="url"
                 value={sitemapUrl}
                 onChange={(e) => setSitemapUrl(e.target.value)}
-                placeholder="https://example.com/sitemap.xml"
+                placeholder="https://example.com/ or https://example.com/sitemap.xml"
                 className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
                 disabled={isLoading}
@@ -108,7 +108,7 @@ export default function LoadSitemap({ weights, onAnalyze, onLoadDemo, isLoading 
               </button>
             </div>
             <p className="text-xs text-gray-400 mt-1.5">
-              Supports sitemap index files. External sitemaps are fetched server-side.
+              Enter any URL — we&apos;ll auto-discover the sitemap via robots.txt and common paths. Or paste the sitemap URL directly.
             </p>
           </div>
         </div>
