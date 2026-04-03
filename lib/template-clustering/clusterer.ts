@@ -1,40 +1,116 @@
 /**
  * URL-pattern based clustering algorithm.
+ *
  * Groups URLs by their structural path pattern, replacing variable segments
- * with {var} placeholder.
+ * (IDs, slugs, hashes, dates) with a {var} placeholder.
+ *
+ * Principle: two URLs that differ only in variable segments share the same
+ * template layout and should be grouped together.
  */
 
+/**
+ * Returns true if a path segment looks like a variable (ID, slug, hash, date)
+ * rather than a fixed route keyword.
+ */
 function isVariableSegment(segment: string): boolean {
-  // Numeric IDs
+  // Pure numeric ID  (e.g. 12345)
   if (/^\d+$/.test(segment)) return true
-  // UUIDs
-  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(segment)) return true
-  // Slugs with multiple hyphens (likely product/post slugs)
-  if (segment.includes('-') && segment.length > 10) return true
-  // Long alphanumeric strings (likely IDs or hashes)
+
+  // UUID  (e.g. 550e8400-e29b-41d4-a716-446655440000)
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(segment))
+    return true
+
+  // Hex hash / CMS token  (e.g. a1b2c3d4e5f6)
+  if (/^[0-9a-f]{12,}$/i.test(segment)) return true
+
+  // Long alphanumeric token (20+ chars)
   if (/^[a-zA-Z0-9_-]{20,}$/.test(segment)) return true
+
+  // Hyphenated slug with at least one hyphen — this is the most important rule.
+  // Slugs like "red-running-shoes", "john-doe", "my-brand-name" are all variable.
+  // We require length > 3 to avoid treating short fixed keywords like "new" as variable.
+  if (segment.includes('-') && segment.length > 3) return true
+
+  // Underscore-separated slug (e.g. some_product_name)
+  if (segment.includes('_') && segment.length > 8) return true
+
+  // Date-looking segments  (e.g. 2024-01-15, 20240115, 2024)
+  if (/^\d{4}(-\d{2}(-\d{2})?)?$/.test(segment)) return true
+  if (/^\d{8}$/.test(segment)) return true
+
+  // Looks like a WordPress post slug or Shopify handle (lowercase, may include numbers)
+  // e.g. "my-awesome-product-123"
+  if (/^[a-z][a-z0-9-]{5,}$/.test(segment)) return true
+
   return false
 }
 
 /**
- * Compute pattern signature for a URL path.
- * Variable segments (IDs, slugs) are replaced with {var}.
+ * Fixed structural keywords that should NEVER be treated as variable,
+ * even if they match slug-like patterns above.
+ * These are common route prefixes in ecommerce/CMS platforms.
  */
-function computePathPattern(url: string): string {
+const FIXED_KEYWORDS = new Set([
+  'products', 'product', 'collections', 'collection',
+  'categories', 'category', 'cat',
+  'brands', 'brand', 'manufacturer',
+  'blogs', 'blog', 'news', 'articles', 'article', 'posts', 'post',
+  'pages', 'page',
+  'shop', 'store',
+  'account', 'accounts', 'profile',
+  'checkout', 'cart', 'basket',
+  'search',
+  'help', 'support', 'docs', 'faq',
+  'about', 'contact', 'team', 'careers',
+  'legal', 'privacy', 'terms',
+  'plants', 'plant', 'species', 'glossary', 'directory',
+  'landing', 'lp', 'promo', 'campaign',
+  'login', 'register', 'signup', 'logout',
+  'wishlist', 'compare',
+  'en', 'fr', 'de', 'es', 'it', 'pt', 'nl', 'ja', 'zh',  // language codes
+  'us', 'uk', 'ca', 'au',                                   // country codes
+  'www', 'm', 'app',
+])
+
+function isStrictlyVariable(segment: string, idx: number): boolean {
+  // The first path segment (idx === 0) is almost always a route prefix keyword
+  // and should never be treated as variable.
+  if (idx === 0) return false
+
+  // Known fixed keywords should never be variable
+  if (FIXED_KEYWORDS.has(segment.toLowerCase())) return false
+
+  return isVariableSegment(segment)
+}
+
+/**
+ * Compute a stable pattern signature for a URL.
+ * Variable segments are replaced with {var}.
+ *
+ * Examples:
+ *   /products/red-running-shoes → domain.com/products/{var}
+ *   /collections/summer-sale    → domain.com/collections/{var}
+ *   /blogs/news/post-title      → domain.com/blogs/news/{var}
+ *   /2024/01/15/my-post         → domain.com/{var}/{var}/{var}/{var}
+ *   /about                      → domain.com/about
+ */
+export function computePathPattern(url: string): string {
   try {
     const parsed = new URL(url)
     const segments = parsed.pathname.split('/').filter(Boolean)
 
-    // Replace last segment if it looks like a variable (slug/ID)
-    // Keep first N-1 segments as-is; replace last if variable
     if (segments.length === 0) return parsed.hostname + '/'
 
-    const patternSegments = segments.map((seg, idx) => {
-      // Always keep the first segment (it's typically the route prefix like 'products', 'collections')
-      if (idx === 0) return seg
-      // For subsequent segments, check if they look like variables
-      return isVariableSegment(seg) ? '{var}' : seg
+    const rawPatternSegments: string[] = segments.map((seg, idx): string => {
+      return isStrictlyVariable(seg, idx) ? '{var}' : seg.toLowerCase()
     })
+
+    // If the entire path became {var} placeholders (extremely rare edge case),
+    // fall back to pinning the first segment to avoid over-clustering.
+    const allVar = rawPatternSegments.length > 1 && rawPatternSegments.every((s) => s === '{var}')
+    const patternSegments = allVar
+      ? [segments[0].toLowerCase(), ...rawPatternSegments.slice(1)]
+      : rawPatternSegments
 
     return parsed.hostname + '/' + patternSegments.join('/')
   } catch {
@@ -56,8 +132,7 @@ export function clusterByPattern(urls: string[]): Map<string, string[]> {
 }
 
 /**
- * Given clusters, determine which are "template-worthy" (have enough URLs
- * to justify template + content classification).
+ * Given clusters, return those with enough URLs to justify template+content treatment.
  */
 export function getTemplateClusters(
   clusters: Map<string, string[]>,
