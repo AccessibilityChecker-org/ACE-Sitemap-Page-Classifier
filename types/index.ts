@@ -14,15 +14,20 @@ export type PageCategory =
   | 'Policy / Legal Pages'
   | 'Help Center / Docs Pages'
   | 'Landing Pages'
+  | 'Brand Pages'
+  | 'Plant / Database Pages'
   | 'Other'
 
 export type Platform =
   | 'Shopify'
   | 'WordPress'
+  | 'WooCommerce'
   | 'Webflow'
   | 'Squarespace'
+  | 'Wix'
   | 'Magento'
   | 'BigCommerce'
+  | 'PrestaShop'
   | 'Custom / Unknown'
 
 export interface ClassifiedURL {
@@ -32,6 +37,14 @@ export interface ClassifiedURL {
   templateClusterId: string | null
   weightedValue: number
   notes: string
+  /** 0–1 confidence score for this classification decision */
+  confidence?: number
+  /** Human-readable evidence notes explaining why this classification was made */
+  reasoning?: string[]
+  /** Which child sitemap this URL came from (e.g. "sitemap_products_1") */
+  sourceSitemap?: string
+  /** Dynamic interaction signals detected in this URL */
+  dynamicSignals?: string[]
 }
 
 export interface CategoryGroup {
@@ -45,6 +58,12 @@ export interface CategoryGroup {
   weightedCount: number
   percentOfSite: number
   typeLabel: string
+  /** Representative URL for this cluster (first template or dynamic URL) */
+  representativeUrl?: string
+  /** Human-readable explanation of why these URLs are grouped */
+  clusterReasoning?: string
+  /** Average confidence score across all URLs in this category */
+  avgConfidence?: number
 }
 
 export interface AnalysisResult {

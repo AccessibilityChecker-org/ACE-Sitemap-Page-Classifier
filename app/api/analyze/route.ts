@@ -31,7 +31,7 @@ export async function POST(req: NextRequest): Promise<Response> {
         try {
           controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(data)}\n\n`))
         } catch {
-          // Controller may be closed
+          // Controller may already be closed
         }
       }
 
@@ -48,6 +48,8 @@ export async function POST(req: NextRequest): Promise<Response> {
         let urls: string[] = []
         let assetUrlsFiltered = 0
         let domain = 'unknown'
+        // Source sitemap map: url → sitemap label (only populated for URL fetch mode)
+        let sourceSitemapMap: Map<string, string> | undefined
 
         if (type === 'url') {
           if (!body.sitemapUrl) {
@@ -67,6 +69,8 @@ export async function POST(req: NextRequest): Promise<Response> {
 
           urls = result.urls
           assetUrlsFiltered = result.assetUrlsFiltered
+          sourceSitemapMap = result.urlSourceMap
+
         } else if (type === 'xml') {
           if (!body.xmlContent) {
             send({ type: 'error', message: 'Missing xmlContent' })
@@ -79,14 +83,18 @@ export async function POST(req: NextRequest): Promise<Response> {
           urls = parsed.urls
           assetUrlsFiltered = parsed.assetUrlsFiltered
 
-          // If it's a sitemap index, we can't recursively fetch without URL access
           if (parsed.type === 'sitemapindex') {
-            send({ type: 'progress', step: 'Sitemap Index', detail: `Found ${parsed.sitemapUrls.length} sub-sitemaps (URLs only shown)`, percent: 40 })
-            // For XML mode, we can only process URLs from the index listing
+            send({
+              type: 'progress',
+              step: 'Sitemap Index',
+              detail: `Found ${parsed.sitemapUrls.length} child sitemaps — use URL mode to fetch them`,
+              percent: 40,
+            })
             domain = parsed.sitemapUrls[0] ? getDomain(parsed.sitemapUrls[0]) : 'unknown'
           } else {
             domain = urls[0] ? getDomain(urls[0]) : 'unknown'
           }
+
         } else if (type === 'urls') {
           if (!body.urlList) {
             send({ type: 'error', message: 'Missing urlList' })
@@ -97,25 +105,46 @@ export async function POST(req: NextRequest): Promise<Response> {
           send({ type: 'progress', step: 'Parsing URL list', detail: 'Processing pasted URLs', percent: 20 })
           urls = parseUrlList(body.urlList)
           domain = urls[0] ? getDomain(urls[0]) : 'unknown'
+
         } else {
-          send({ type: 'error', message: `Unknown type: ${type}` })
+          send({ type: 'error', message: `Unknown input type: ${type}` })
           controller.close()
           return
         }
 
         if (urls.length === 0) {
-          send({ type: 'error', message: 'No URLs found. Please check your sitemap or URL list.' })
+          send({
+            type: 'error',
+            message: 'No page URLs found. Please check your sitemap or URL list.',
+          })
           controller.close()
           return
         }
 
-        send({ type: 'progress', step: 'Detecting platform', detail: `Analyzing ${urls.length} URLs`, percent: 70 })
+        send({
+          type: 'progress',
+          step: 'Detecting platform',
+          detail: `Analysing ${urls.length} URLs for platform signals`,
+          percent: 70,
+        })
         const { platform, confidence: platformConfidence } = detectPlatform(urls)
 
-        send({ type: 'progress', step: 'Classifying pages', detail: `Classifying ${urls.length} URLs into categories`, percent: 80 })
-        const { classified, categories } = classifyUrls(urls, weights)
+        send({
+          type: 'progress',
+          step: 'Classifying pages',
+          detail: `Classifying ${urls.length} URLs into categories`,
+          percent: 80,
+        })
+        // Pass source sitemap map so the classifier can use child sitemap labels
+        // as an additional category signal (Layer 1 of the 6-layer engine).
+        const { classified, categories } = classifyUrls(urls, weights, sourceSitemapMap)
 
-        send({ type: 'progress', step: 'Calculating weights', detail: 'Computing weighted page counts', percent: 90 })
+        send({
+          type: 'progress',
+          step: 'Calculating weights',
+          detail: 'Computing weighted page counts',
+          percent: 90,
+        })
         const summary = computeAnalysisSummary(classified)
 
         const result: AnalysisResult = {
@@ -133,15 +162,13 @@ export async function POST(req: NextRequest): Promise<Response> {
 
         send({ type: 'progress', step: 'Complete', detail: 'Analysis finished', percent: 100 })
         send({ type: 'complete', result })
+
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err)
         try {
-          const send = (data: object) => {
-            controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(data)}\n\n`))
-          }
           send({ type: 'error', message: `Analysis failed: ${message}` })
         } catch {
-          // Ignore
+          // Ignore if controller is already closed
         }
       } finally {
         try {
