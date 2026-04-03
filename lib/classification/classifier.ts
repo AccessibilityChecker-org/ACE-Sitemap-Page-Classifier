@@ -372,22 +372,28 @@ export function classifyUrls(
       categoryUrls.find((u) => u.pageType === 'dynamic')?.url ??
       categoryUrls[0]?.url
 
+    // Is this a single-template-family group?
+    const isFamilyGroup =
+      SINGLE_TEMPLATE_FAMILY_CATEGORIES.has(category) && templateCount === 1 && contentCount > 0
+
     // Build a human-readable cluster explanation
     let clusterReasoning = ''
-    if (SINGLE_TEMPLATE_FAMILY_CATEGORIES.has(category) && contentCount > 0) {
+    if (isFamilyGroup) {
       clusterReasoning =
-        `These ${rawCount} URLs are grouped as a "${category}" family. ` +
-        `They share the same page structure (navigation, layout regions, components) ` +
-        `and differ only in data (names, descriptions, images, prices). ` +
-        `Counted as 1 template page + ${contentCount} content page${contentCount !== 1 ? 's' : ''}.`
+        `All ${rawCount.toLocaleString()} URLs share the same page layout — ` +
+        `navigation, structure, regions, and components are identical across every page. ` +
+        `Only the data changes (names, images, descriptions, prices). ` +
+        `Priced as: 1 full layout audit (×${weights.template}) + ` +
+        `${contentCount.toLocaleString()} content-only checks (×${weights.content} each) = ` +
+        `${weightedCount.toLocaleString()} weighted pages total.`
     } else if (ALWAYS_DYNAMIC_CATEGORIES.has(category)) {
       clusterReasoning =
         `All ${rawCount} pages in "${category}" require interactive accessibility testing ` +
         `(filters, forms, account flows, AJAX-driven state, or checkout steps).`
     } else if (templateCount > 0 && contentCount > 0) {
       clusterReasoning =
-        `URL pattern clustering identified ${templateCount} template${templateCount !== 1 ? 's' : ''} ` +
-        `and ${contentCount} content pages sharing a common path structure. ` +
+        `URL pattern clustering identified ${templateCount} distinct layout template${templateCount !== 1 ? 's' : ''} ` +
+        `and ${contentCount} content pages sharing those path structures. ` +
         `Template pages cover the shared layout; content pages differ only in copy.`
     } else if (uniqueCount === rawCount) {
       clusterReasoning =
@@ -395,9 +401,11 @@ export function classifyUrls(
         `or insufficient siblings to form a template family.`
     }
 
-    // Type label for UI
+    // Type label for UI — family groups get a clearer description
     let typeLabel: string
-    if (dynamicCount > 0 && templateCount === 0 && contentCount === 0 && uniqueCount === 0) {
+    if (isFamilyGroup) {
+      typeLabel = `${rawCount.toLocaleString()} page layout family`
+    } else if (dynamicCount > 0 && templateCount === 0 && contentCount === 0 && uniqueCount === 0) {
       typeLabel = `${dynamicCount} dynamic`
     } else if (templateCount > 0 && contentCount > 0) {
       typeLabel = `${templateCount} template + ${contentCount} content`
@@ -425,6 +433,7 @@ export function classifyUrls(
       representativeUrl,
       clusterReasoning,
       avgConfidence,
+      isFamilyGroup,
     })
   }
 

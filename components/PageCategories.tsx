@@ -31,8 +31,10 @@ function getColor(category: string) {
 
 function getPillStyle(group: CategoryGroup) {
   const colors = getColor(group.category)
-  const hasTemplate = group.templateCount > 0
-  if (hasTemplate) {
+  if (group.isFamilyGroup) {
+    return { bg: 'bg-blue-100', text: 'text-blue-700' }
+  }
+  if (group.templateCount > 0) {
     return { bg: 'bg-green-100', text: 'text-green-700' }
   }
   if (group.dynamicCount > 0) {
