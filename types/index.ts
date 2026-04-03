@@ -64,6 +64,12 @@ export interface CategoryGroup {
   clusterReasoning?: string
   /** Average confidence score across all URLs in this category */
   avgConfidence?: number
+  /**
+   * True when all pages in this category share the same layout (template family).
+   * The "template" entry is a pricing abstraction — no single URL is the template.
+   * The UI should render these as a Layout Family, not as "1 template + N content".
+   */
+  isFamilyGroup?: boolean
 }
 
 export interface AnalysisResult {
