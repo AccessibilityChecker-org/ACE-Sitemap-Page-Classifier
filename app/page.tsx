@@ -24,6 +24,7 @@ import QuoteBuilder from '@/components/QuoteBuilder'
 import URLBreakdown from '@/components/URLBreakdown'
 import ExportSection from '@/components/ExportSection'
 import SubdomainManager from '@/components/SubdomainManager'
+import ExecutiveSummary from '@/components/ExecutiveSummary'
 
 const DEFAULT_PROGRESS: AnalysisProgress = {
   step: 'Starting...',
@@ -322,6 +323,13 @@ export default function HomePage() {
 
           {/* Step 7: URL Breakdown */}
           <URLBreakdown analysis={analysisResult} />
+
+          {/* Executive Summary — paste-ready proposal paragraph */}
+          <ExecutiveSummary
+            rawPageCount={combinedRawCount}
+            weightedPageCount={combinedWeightedCount}
+            recommendation={recommendation}
+          />
 
           {/* Step 8: Export */}
           <ExportSection

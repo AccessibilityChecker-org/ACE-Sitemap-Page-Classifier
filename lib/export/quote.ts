@@ -4,6 +4,34 @@ function fmt(n: number): string {
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
 }
 
+/**
+ * Generates a short, paste-ready executive summary paragraph for proposals.
+ * Uses real numbers from the scan(s) + recommendation so it's ready to drop into
+ * a Word doc, email, or CRM.
+ */
+export function generateExecutiveSummary(
+  clientName: string,
+  planName: string,
+  rawPageCount: number,
+  weightedPageCount: number,
+  recommendation: PricingRecommendation
+): string {
+  const client = clientName.trim() || '[Client Name]'
+  const plan = planName.trim() || '[Plan Name]'
+  const rawStr = rawPageCount.toLocaleString()
+  const weightedStr = weightedPageCount.toLocaleString()
+  const savingsStr = fmt(recommendation.annualSavings || 0)
+
+  return (
+    `This proposal for ${client} presents a fully managed web accessibility service under the ${plan}. ` +
+    `AccessibilityChecker.org will handle code-level WCAG 2.2 AA remediation, continuous monitoring, ` +
+    `expert audits, and VPAT reporting — covering all ongoing compliance obligations as your site evolves. ` +
+    `ACE™ weighted pricing reduces your billable scope from ${rawStr} to ${weightedStr} pages, ` +
+    `recognizing that template-driven pages require far less remediation effort — ` +
+    `saving ${savingsStr} per year vs. standard per-page pricing.`
+  )
+}
+
 export function generateQuoteSummary(
   analysis: AnalysisResult,
   recommendation: PricingRecommendation,
