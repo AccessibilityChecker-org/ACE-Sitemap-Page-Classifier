@@ -130,16 +130,43 @@ export async function generatePDFQuote(
 
   y += 4
 
+  // Build category rows explicitly so column mapping is unambiguous.
+  // Column order: [Category, Classification, Raw, Weighted, %]
+  //   - Raw      := category's actual raw URL count from the scan
+  //   - Weighted := category's computed weighted page count
+  // The Total row sums the SAME rendered numeric fields, so sum(rows) == total.
+  let rawTotal = 0
+  let weightedTotal = 0
+  let percentTotal = 0
+  const categoryRows = analysis.categories.map((cat) => {
+    const rawCount = cat.rawCount
+    const weightedCount = cat.weightedCount
+    const percentOfSite = cat.percentOfSite
+    rawTotal += rawCount
+    weightedTotal += weightedCount
+    percentTotal += percentOfSite
+    return [
+      cat.category,
+      trunc(cat.typeLabel, 32),            // prevent overflow in narrow column
+      rawCount.toLocaleString(),           // Raw column — always cat.rawCount
+      weightedCount.toLocaleString(),      // Weighted column — always cat.weightedCount
+      `${percentOfSite}%`,
+    ]
+  })
+
+  const totalRow = [
+    'Total',
+    '',
+    rawTotal.toLocaleString(),
+    weightedTotal.toLocaleString(),
+    `${percentTotal.toFixed(1)}%`,
+  ]
+
   autoTable(doc, {
     startY: y,
     head: [['Category', 'Classification', 'Raw', 'Weighted', '%']],
-    body: analysis.categories.map((cat) => [
-      cat.category,
-      trunc(cat.typeLabel, 32),            // prevent overflow in narrow column
-      cat.rawCount.toLocaleString(),
-      cat.weightedCount.toLocaleString(),
-      `${cat.percentOfSite}%`,
-    ]),
+    body: categoryRows,
+    foot: [totalRow],
     theme: 'grid',
     headStyles: {
       fillColor: GREEN,
@@ -150,6 +177,12 @@ export async function generatePDFQuote(
     bodyStyles: {
       fontSize: 8,
       textColor: GRAY_700,
+    },
+    footStyles: {
+      fillColor: LIGHT_GREEN,
+      textColor: DARK_GREEN,
+      fontStyle: 'bold',
+      fontSize: 8,
     },
     alternateRowStyles: {
       fillColor: GRAY_100,
