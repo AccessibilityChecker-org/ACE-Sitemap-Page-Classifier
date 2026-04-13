@@ -47,12 +47,13 @@ export default function PageCategories({ analysis }: Props) {
   const totalRaw = analysis.rawPageCount
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-      <div className="flex items-center gap-3 mb-5">
-        <div className="flex items-center justify-center w-7 h-7 bg-green-600 text-white text-xs font-bold rounded-full">
-          4
+    <div className="ace-panel">
+      <div className="flex items-baseline gap-5 mb-6">
+        <div className="ace-num">4</div>
+        <div className="flex flex-col gap-0.5">
+          <span className="ace-section-kicker">Section 4</span>
+          <h2 className="ace-title">Page Categories</h2>
         </div>
-        <h2 className="text-gray-900 font-semibold text-base">Page Categories</h2>
         <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
           {analysis.categories.length} categories
         </span>

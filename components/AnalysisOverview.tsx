@@ -101,12 +101,13 @@ export default function AnalysisOverview({ analysis }: Props) {
       : 'bg-gray-100 text-gray-500'
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-      <div className="flex items-center gap-3 mb-5">
-        <div className="flex items-center justify-center w-7 h-7 bg-green-600 text-white text-xs font-bold rounded-full">
-          3
+    <div className="ace-panel">
+      <div className="flex items-baseline gap-5 mb-6">
+        <div className="ace-num">3</div>
+        <div className="flex flex-col gap-0.5">
+          <span className="ace-section-kicker">Section 3</span>
+          <h2 className="ace-title">Analysis Overview</h2>
         </div>
-        <h2 className="text-gray-900 font-semibold text-base">Analysis Overview</h2>
       </div>
 
       {/* Domain header */}

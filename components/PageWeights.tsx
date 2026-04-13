@@ -19,89 +19,96 @@ export default function PageWeightsEditor({ weights, onChange }: Props) {
     }
   }
 
-  const fields: { key: keyof PageWeights; label: string; description: string; color: string }[] = [
+  const fields: { key: keyof PageWeights; label: string; description: string; accent: string }[] = [
     {
       key: 'template',
       label: 'Template',
-      description: 'The single structural template page (e.g., one product page template)',
-      color: 'text-blue-600',
+      description: 'The single structural template page, e.g. one product-page template.',
+      accent: 'var(--forest)',
     },
     {
       key: 'unique',
       label: 'Unique',
-      description: 'One-of-a-kind pages like Homepage, Contact, About (no repeating pattern)',
-      color: 'text-amber-600',
+      description: 'One-of-a-kind pages like Homepage, Contact, About. No repeating pattern.',
+      accent: 'var(--ochre)',
     },
     {
       key: 'content',
       label: 'Content',
-      description: 'Repeated content pages sharing a template (e.g., 6,000 product detail pages)',
-      color: 'text-green-600',
+      description: 'Repeated content pages sharing a template, e.g. 6,000 product detail pages.',
+      accent: 'var(--moss)',
     },
     {
       key: 'dynamic',
       label: 'Dynamic',
-      description: 'Pages that generate content on-demand: search results, account pages, cart',
-      color: 'text-red-500',
+      description: 'Pages generated on-demand: search, account, cart, filters.',
+      accent: 'var(--crimson)',
     },
   ]
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <div className="ace-panel">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-7 h-7 bg-green-600 text-white text-xs font-bold rounded-full">
-            2
+        <div className="flex items-baseline gap-5">
+          <div className="ace-num">2</div>
+          <div className="flex flex-col gap-0.5">
+            <span className="ace-section-kicker">Section 2</span>
+            <h2 className="ace-title">Page Weights</h2>
           </div>
-          <h2 className="text-gray-900 font-semibold text-base">Page Weights</h2>
-          <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-            Default values set
-          </span>
         </div>
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+          className="ace-btn ace-btn--ghost"
         >
-          {isExpanded ? (
-            <>
-              <span>Collapse</span>
-              <ChevronUp size={14} />
-            </>
-          ) : (
-            <>
-              <span>Customize</span>
-              <ChevronDown size={14} />
-            </>
-          )}
+          {isExpanded ? (<><span>Collapse</span><ChevronUp size={14} /></>) : (<><span>Customize</span><ChevronDown size={14} /></>)}
         </button>
       </div>
 
-      {/* Always visible: current weights summary */}
-      <div className="mt-4 flex flex-wrap gap-3">
+      {/* Always visible: current weights as a specimen strip */}
+      <div className="mt-6 grid grid-cols-2 md:grid-cols-4 border-t border-[color:var(--rule)]">
         {fields.map((f) => (
-          <div key={f.key} className="flex items-center gap-1.5 bg-gray-50 rounded-lg px-3 py-1.5">
-            <span className={`text-xs font-semibold ${f.color}`}>{f.label}:</span>
-            <span className="text-xs font-bold text-gray-900">{weights[f.key]}</span>
+          <div
+            key={f.key}
+            className="py-4 px-5 border-r last:border-r-0 border-[color:var(--rule)] flex items-baseline justify-between gap-3"
+            style={{ borderBottom: '1px solid var(--rule)' }}
+          >
+            <div className="flex flex-col">
+              <span
+                className="font-mono text-[10px] uppercase tracking-[0.2em]"
+                style={{ color: f.accent }}
+              >
+                {f.label}
+              </span>
+              <span className="text-[11px] text-ink-soft mt-0.5">weight</span>
+            </div>
+            <span className="ace-stat text-[32px] leading-none text-ink">
+              {weights[f.key].toFixed(1)}
+            </span>
           </div>
         ))}
       </div>
 
       {isExpanded && (
-        <div className="mt-5 space-y-5">
-          <div className="flex items-start gap-2 p-3 bg-blue-50 rounded-lg border border-blue-100">
-            <Info size={14} className="text-blue-500 mt-0.5 shrink-0" />
-            <p className="text-xs text-blue-700">
-              Weights determine how many &ldquo;effective pages&rdquo; each URL type counts as. A product page
-              template counts as 1.0, but all the content copies sharing that template count as just
-              0.2 each — because they require the same accessibility fixes as the template.
+        <div className="mt-6 space-y-5">
+          <div className="flex items-start gap-3 p-4 bg-[color:var(--ochre-soft)] border-l-2 border-[color:var(--ochre)]">
+            <Info size={14} className="text-ochre mt-0.5 shrink-0" />
+            <p className="text-xs text-ink leading-relaxed">
+              Weights decide how many &ldquo;effective pages&rdquo; each URL type counts as.
+              A product-page template counts as 1.0. Its thousands of content copies count
+              as just 0.2 each, because they share the same accessibility surface as the template.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-5">
             {fields.map((f) => (
               <div key={f.key}>
-                <label className="block text-xs font-medium text-gray-700 mb-1">
-                  <span className={f.color}>{f.label} Page Weight</span>
+                <label className="block mb-1.5">
+                  <span
+                    className="font-mono text-[10px] uppercase tracking-[0.2em]"
+                    style={{ color: f.accent }}
+                  >
+                    {f.label} weight
+                  </span>
                 </label>
                 <input
                   type="number"
@@ -110,29 +117,29 @@ export default function PageWeightsEditor({ weights, onChange }: Props) {
                   min={0}
                   max={10}
                   step={0.1}
-                  className="w-full px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="ace-input w-full font-mono"
                 />
-                <p className="text-xs text-gray-400 mt-1">{f.description}</p>
+                <p className="text-xs text-ink-soft mt-1.5">{f.description}</p>
               </div>
             ))}
           </div>
 
-          {/* How it works example */}
-          <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <p className="text-xs font-semibold text-gray-700 mb-2">How it works — Example:</p>
-            <div className="space-y-1 text-xs text-gray-600">
+          {/* Worked example */}
+          <div className="ace-chip" style={{ background: 'var(--paper-sunk)' }}>
+            <p className="ace-section-kicker mb-3">Worked example</p>
+            <div className="space-y-1.5 text-[13px] text-ink">
               <div className="flex items-center justify-between">
                 <span>1 Product Template</span>
-                <span className="font-medium">× {weights.template} = {weights.template}</span>
+                <span className="ace-stat">× {weights.template} = {weights.template.toFixed(1)}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span>6,181 Product Content Pages</span>
-                <span className="font-medium">× {weights.content} = {(6181 * weights.content).toFixed(0)}</span>
+                <span className="ace-stat">× {weights.content} = {(6181 * weights.content).toFixed(0)}</span>
               </div>
-              <div className="border-t border-gray-200 pt-1 flex items-center justify-between">
-                <span className="font-semibold text-gray-700">6,182 Raw → Weighted</span>
-                <span className="font-bold text-green-700">
-                  {(weights.template + 6181 * weights.content).toFixed(0)} effective pages
+              <div className="border-t border-[color:var(--rule)] pt-2 mt-2 flex items-center justify-between">
+                <span className="font-semibold">6,182 raw → weighted</span>
+                <span className="ace-stat text-forest font-semibold">
+                  {(weights.template + 6181 * weights.content).toFixed(0)} effective
                 </span>
               </div>
             </div>

@@ -59,13 +59,16 @@ export default function ExecutiveSummary({
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-      <div className="flex items-center gap-3 mb-5">
-        <div className="flex items-center justify-center w-7 h-7 bg-indigo-600 text-white rounded-full">
-          <FileText size={14} />
+    <div className="ace-panel">
+      <div className="flex items-baseline gap-5 mb-6">
+        <div className="ace-num ace-num--ochre">§</div>
+        <div className="flex flex-col gap-0.5 flex-1">
+          <span className="ace-section-kicker">Appendix A</span>
+          <h2 className="ace-title">Executive Summary</h2>
         </div>
-        <h2 className="text-gray-900 font-semibold text-base">Executive Summary</h2>
-        <span className="text-xs text-gray-400 ml-auto">Paste-ready proposal paragraph</span>
+        <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-ink-soft self-center">
+          Paste-ready
+        </span>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-3 mb-4">

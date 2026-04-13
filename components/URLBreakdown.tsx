@@ -336,13 +336,14 @@ export default function URLBreakdown({ analysis }: Props) {
   const weights = { template: analysis.weights.template, content: analysis.weights.content }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <div className="ace-panel">
       <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-7 h-7 bg-green-600 text-white text-xs font-bold rounded-full">
-            7
+        <div className="flex items-baseline gap-5">
+          <div className="ace-num">7</div>
+          <div className="flex flex-col gap-0.5">
+            <span className="ace-section-kicker">Section 7</span>
+            <h2 className="ace-title">URL Breakdown</h2>
           </div>
-          <h2 className="text-gray-900 font-semibold text-base">URL Breakdown</h2>
           <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
             Expandable · with reasoning
           </span>

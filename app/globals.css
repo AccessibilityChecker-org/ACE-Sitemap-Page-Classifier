@@ -2,40 +2,368 @@
 @tailwind components;
 @tailwind utilities;
 
+/* =========================================================================
+   ACE — Editorial Instrument
+   A paper-toned audit aesthetic. Ink + cream + forest + ochre.
+   ========================================================================= */
+
 :root {
-  --foreground-rgb: 17, 24, 39;
-  --background-rgb: 249, 250, 251;
+  /* Paper & ink */
+  --paper:         #F4EEDF;  /* warm cream background */
+  --paper-raised: #FBF7EC;  /* slightly lighter for panels */
+  --paper-sunk:    #EDE5D1;  /* slightly darker for wells/insets */
+  --ink:           #0C0C0D;  /* near-black for text */
+  --ink-muted:     #5E5B54;  /* muted ink for secondary text */
+  --ink-soft:      #8A867C;  /* softest ink for meta */
+  --rule:          #D6CEB9;  /* warm hairline rule */
+  --rule-strong:   #2A2825;  /* strong rule for section tops */
+
+  /* Accents */
+  --forest:        #143F2C;  /* serious deep green (brand-adjacent) */
+  --forest-soft:   #D8E4D6;
+  --forest-ink:    #0C2A1D;
+  --moss:          #4E7A5D;  /* mid-green for pills */
+  --ochre:         #B5691F;  /* editorial orange */
+  --ochre-soft:    #F1E1C5;
+  --crimson:       #8C2A22;  /* alerts */
+  --crimson-soft:  #F0D6D0;
+
+  /* Type scale helpers */
+  --tracking-kicker: 0.22em;
+}
+
+html, body {
+  background: var(--paper);
+  color: var(--ink);
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: rgb(var(--background-rgb));
+  font-feature-settings: 'ss01', 'cv11', 'tnum';
+  background-image:
+    /* very subtle paper grain */
+    radial-gradient(circle at 20% 10%, rgba(40,30,10,0.015) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(40,30,10,0.018) 0%, transparent 40%);
+  background-attachment: fixed;
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
+/* ---- Fonts ---- */
+.font-body    { font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif; }
+.font-mono    { font-family: var(--font-mono), ui-monospace, monospace; }
+.font-display { font-family: var(--font-display), ui-serif, Georgia, serif; }
+
+/* Named color utilities reusable in className="text-ink" etc. */
+.text-ink         { color: var(--ink); }
+.text-ink-muted   { color: var(--ink-muted); }
+.text-ink-soft    { color: var(--ink-soft); }
+.text-forest      { color: var(--forest); }
+.text-ochre       { color: var(--ochre); }
+.text-crimson     { color: var(--crimson); }
+.bg-paper         { background: var(--paper); }
+.bg-paper-raised  { background: var(--paper-raised); }
+.bg-paper-sunk    { background: var(--paper-sunk); }
+.bg-forest        { background: var(--forest); }
+.bg-forest-soft   { background: var(--forest-soft); }
+.bg-ochre         { background: var(--ochre); }
+.bg-ochre-soft    { background: var(--ochre-soft); }
+
+/* =========================================================================
+   HEADER
+   ========================================================================= */
+.ace-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--paper);
+  backdrop-filter: saturate(1.1);
+}
+.ace-header-rule {
+  height: 2px;
+  background: var(--rule-strong);
+}
+.ace-rule-v {
+  width: 1px;
+  height: 36px;
+  background: var(--rule);
+}
+.ace-kicker {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: var(--tracking-kicker);
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* Logo crop — the source PNG has ~40% whitespace. We zoom the bitmap
+   inside a clipped frame so only the logo-lockup shows. */
+.ace-logo-crop {
+  width: 188px;
+  height: 44px;
+  overflow: hidden;
+  position: relative;
+  display: inline-block;
+}
+.ace-logo-img {
+  position: absolute;
+  width: 360px;   /* ≈ 1.9× container width — zooms past the padding */
+  height: auto;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* =========================================================================
+   BADGES
+   ========================================================================= */
+.ace-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px 4px;
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  font-weight: 500;
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  background: var(--paper-raised);
+  color: var(--ink);
+  white-space: nowrap;
+}
+.ace-badge--ochre {
+  color: var(--ochre);
+  border-color: color-mix(in srgb, var(--ochre) 40%, var(--rule));
+  background: var(--ochre-soft);
+}
+.ace-badge--forest {
+  color: var(--forest);
+  border-color: color-mix(in srgb, var(--forest) 40%, var(--rule));
+  background: var(--forest-soft);
+}
+.ace-badge--live {
+  color: var(--forest);
+  border-color: color-mix(in srgb, var(--forest) 40%, var(--rule));
+  background: var(--paper-raised);
+}
+.ace-dot {
   width: 6px;
   height: 6px;
+  border-radius: 999px;
+  background: var(--forest);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--forest) 60%, transparent);
+  animation: ace-pulse 2s ease-out infinite;
 }
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
+@keyframes ace-pulse {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--forest) 60%, transparent); }
+  70%  { box-shadow: 0 0 0 6px color-mix(in srgb, var(--forest) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--forest) 0%, transparent); }
 }
+
+/* =========================================================================
+   PANELS (the new card chrome)
+   Paper-raised block with a heavy top rule + thin bottom rule.
+   Replaces the generic rounded-xl shadow-sm card everywhere.
+   ========================================================================= */
+.ace-panel {
+  position: relative;
+  background: var(--paper-raised);
+  border-top: 2px solid var(--rule-strong);
+  border-bottom: 1px solid var(--rule);
+  padding: 28px 30px 30px;
+}
+.ace-panel--inset {
+  background: var(--paper-sunk);
+  border-top-color: var(--rule);
+}
+.ace-panel--forest {
+  background: var(--forest);
+  color: #F1EAD4;
+  border-top-color: var(--forest-ink);
+  border-bottom-color: var(--forest-ink);
+}
+
+/* A left-gutter section numeral in italic display serif. Sits inside .ace-panel.
+   Usage: add <div class="ace-num">III</div> or plain number inside the panel header. */
+.ace-num {
+  font-family: var(--font-display), serif;
+  font-style: italic;
+  font-size: 54px;
+  line-height: 0.85;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+.ace-num--forest { color: var(--forest); }
+.ace-num--ochre  { color: var(--ochre); }
+
+.ace-section-kicker {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  letter-spacing: var(--tracking-kicker);
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.ace-title {
+  font-family: var(--font-display), serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+/* Inline sub-cards inside a panel (KPI blocks, pill clusters, etc.) */
+.ace-chip {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  padding: 14px 16px;
+  border-radius: 2px;
+}
+
+/* Mono numeric display — use for big stat numbers */
+.ace-stat {
+  font-family: var(--font-mono), monospace;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* =========================================================================
+   BUTTONS
+   ========================================================================= */
+.ace-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid var(--rule-strong);
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease, color 120ms ease;
+}
+.ace-btn:hover:not(:disabled) {
+  background: var(--forest);
+  border-color: var(--forest-ink);
+  transform: translateY(-1px);
+}
+.ace-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.ace-btn--ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--rule-strong);
+}
+.ace-btn--ghost:hover:not(:disabled) {
+  background: var(--ink);
+  color: var(--paper);
+}
+.ace-btn--ochre {
+  background: var(--ochre);
+  border-color: var(--ochre);
+  color: #FFF8EA;
+}
+.ace-btn--ochre:hover:not(:disabled) {
+  background: #93561A;
+  border-color: #93561A;
+}
+
+/* Input baseline — paper-toned fields */
+.ace-input {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 10px 14px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink);
+  transition: border-color 120ms ease, background 120ms ease;
+}
+.ace-input:focus {
+  outline: none;
+  border-color: var(--rule-strong);
+  background: var(--paper-raised);
+}
+
+/* =========================================================================
+   HERO MARQUEE (landing block above the instrument)
+   ========================================================================= */
+.ace-hero {
+  position: relative;
+  padding: 64px 0 40px;
+}
+.ace-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 48px;
+  align-items: end;
+}
+@media (max-width: 900px) {
+  .ace-hero-grid { grid-template-columns: 1fr; gap: 24px; }
+}
+.ace-display {
+  font-family: var(--font-display), serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(48px, 7.5vw, 104px);
+  line-height: 0.94;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.ace-display em {
+  font-style: normal;
+  color: var(--forest);
+}
+.ace-display-meta {
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: var(--tracking-kicker);
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+/* =========================================================================
+   MISC — scrollbars, focus, selection
+   ========================================================================= */
+::selection {
+  background: var(--forest);
+  color: var(--paper);
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--paper); }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
+  background: var(--rule);
+  border: 2px solid var(--paper);
+  border-radius: 999px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+::-webkit-scrollbar-thumb:hover { background: var(--rule-strong); }
+
+/* Subtle reveal for first page-load (staggered via inline style on children) */
+@keyframes ace-reveal {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+.ace-reveal {
+  animation: ace-reveal 520ms cubic-bezier(0.2, 0.65, 0.2, 1) both;
 }
 
-/* Smooth transitions */
-* {
-  transition-property: background-color, border-color, color, fill, stroke;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
-}
-
-/* Override for layout elements that shouldn't transition */
-html, body, div, section, main, header, footer, nav, aside {
-  transition: none;
+/* Footnote-style tick between stats */
+.ace-tick {
+  display: inline-block;
+  width: 8px;
+  height: 1px;
+  background: var(--ink-soft);
+  vertical-align: middle;
+  margin: 0 10px;
 }

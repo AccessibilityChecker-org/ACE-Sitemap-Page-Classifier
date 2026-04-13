@@ -23,12 +23,13 @@ export default function RecommendedTier({ analysis, recommendation }: Props) {
       : 0
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-      <div className="flex items-center gap-3 mb-5">
-        <div className="flex items-center justify-center w-7 h-7 bg-green-600 text-white text-xs font-bold rounded-full">
-          5
+    <div className="ace-panel">
+      <div className="flex items-baseline gap-5 mb-6">
+        <div className="ace-num">5</div>
+        <div className="flex flex-col gap-0.5">
+          <span className="ace-section-kicker">Section 5</span>
+          <h2 className="ace-title">Recommended Tier</h2>
         </div>
-        <h2 className="text-gray-900 font-semibold text-base">Recommended Tier</h2>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-5">

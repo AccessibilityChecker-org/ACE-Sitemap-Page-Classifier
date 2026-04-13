@@ -203,7 +203,7 @@ export default function SubdomainManager({
     .reduce((sum, s) => sum + (s.analysis?.weightedPageCount ?? 0), 0)
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+    <div className="ace-panel">
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
         <div className="flex items-center justify-center w-7 h-7 bg-indigo-600 text-white text-xs font-bold rounded-full">

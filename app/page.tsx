@@ -270,90 +270,110 @@ export default function HomePage() {
   const showResults = analysisResult && recommendation && !isLoading
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-      {/* Hero */}
-      <div className="text-center pb-2">
-        <h1 className="text-2xl font-black text-gray-900 mb-2">ACE™ Sitemap Page Classifier</h1>
-        <p className="text-gray-500 text-sm max-w-xl mx-auto">
-          Scan any sitemap, classify pages, detect template repetition, apply weighted pricing,
-          and generate professional accessibility service quotes.
-        </p>
-      </div>
-
-      {/* Step 1: Load Sitemap */}
-      <LoadSitemap weights={weights} onAnalyze={handleAnalyze} onLoadDemo={handleLoadDemo} isLoading={isLoading} />
-
-      {/* Step 2: Page Weights */}
-      <PageWeightsEditor weights={weights} onChange={setWeights} />
-
-      {/* Loading / Error state */}
-      {(isLoading || (!isLoading && progress.isError)) && <LoadingState progress={progress} />}
-
-      {/* Results */}
-      {showResults && (
-        <>
-          {/* Step 3: Analysis Overview */}
-          <AnalysisOverview analysis={analysisResult} />
-
-          {/* Step 4: Page Categories */}
-          <PageCategories analysis={analysisResult} />
-
-          {/* Subdomain Manager — sits between categories and recommended tier */}
-          <SubdomainManager
-            subdomains={subdomains}
-            weights={weights}
-            mainDomain={analysisResult.domain}
-            onAdd={handleAddSubdomain}
-            onRemove={handleRemoveSubdomain}
-            onToggleIncluded={handleToggleSubdomainIncluded}
-            combinedWeightedCount={combinedWeightedCount}
-            combinedRawCount={combinedRawCount}
-          />
-
-          {/* Step 5: Recommended Tier — uses combined count */}
-          <RecommendedTier analysis={analysisResult} recommendation={recommendation} />
-
-          {/* Step 6: Quote Builder */}
-          <QuoteBuilder
-            quoteState={syncedQuoteState}
-            quoteCalc={quoteCalc}
-            recommendation={recommendation}
-            onChange={setQuoteState}
-          />
-
-          {/* Step 7: URL Breakdown */}
-          <URLBreakdown analysis={analysisResult} />
-
-          {/* Executive Summary — paste-ready proposal paragraph */}
-          <ExecutiveSummary
-            rawPageCount={combinedRawCount}
-            weightedPageCount={combinedWeightedCount}
-            recommendation={recommendation}
-          />
-
-          {/* Step 8: Export */}
-          <ExportSection
-            analysis={analysisResult}
-            recommendation={recommendation}
-            quoteCalc={quoteCalc}
-            quoteState={syncedQuoteState}
-          />
-        </>
-      )}
-
-      {/* Empty state */}
-      {!analysisResult && !isLoading && !progress.isError && (
-        <div className="text-center py-16 text-gray-400">
-          <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-            <svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-            </svg>
+    <div className="max-w-[1280px] mx-auto px-6 lg:px-10 pb-24">
+      {/* ───────── Hero ───────── */}
+      <section className="ace-hero ace-reveal">
+        <div className="ace-hero-grid">
+          <div>
+            <div className="ace-display-meta mb-5">
+              <span>Edition 01</span>
+              <span className="ace-tick" aria-hidden />
+              <span>Compendium for pre-sales engineering</span>
+            </div>
+            <h1 className="ace-display">
+              The sitemap,<br />
+              classified by <em>form</em> &amp; <em>function</em>.
+            </h1>
           </div>
-          <p className="text-sm font-medium text-gray-400">
-            Enter a sitemap URL above or click the Demo button to see results
-          </p>
+          <div className="flex flex-col gap-4 md:items-end">
+            <p className="text-ink-muted text-[15px] leading-[1.55] max-w-sm md:text-right">
+              A page-by-page instrument that separates templates from content,
+              surfaces the shape of a site, and composes managed-accessibility
+              proposals worth pressing into a PDF.
+            </p>
+            <div className="flex gap-2 items-center text-[11px] font-mono uppercase tracking-[0.22em] text-ink-soft">
+              <span>01 Load</span>
+              <span className="ace-tick" aria-hidden />
+              <span>02 Weight</span>
+              <span className="ace-tick" aria-hidden />
+              <span>03 Classify</span>
+              <span className="ace-tick" aria-hidden />
+              <span>04 Quote</span>
+            </div>
+          </div>
         </div>
-      )}
+        <div className="mt-10 h-[2px] bg-[color:var(--rule-strong)]" aria-hidden />
+      </section>
+
+      <div className="space-y-10 pt-6">
+        {/* Step 1: Load Sitemap */}
+        <div className="ace-reveal" style={{ animationDelay: '60ms' }}>
+          <LoadSitemap weights={weights} onAnalyze={handleAnalyze} onLoadDemo={handleLoadDemo} isLoading={isLoading} />
+        </div>
+
+        {/* Step 2: Page Weights */}
+        <div className="ace-reveal" style={{ animationDelay: '120ms' }}>
+          <PageWeightsEditor weights={weights} onChange={setWeights} />
+        </div>
+
+        {/* Loading / Error state */}
+        {(isLoading || (!isLoading && progress.isError)) && <LoadingState progress={progress} />}
+
+        {/* Results */}
+        {showResults && (
+          <>
+            <div className="ace-reveal"><AnalysisOverview analysis={analysisResult} /></div>
+            <div className="ace-reveal"><PageCategories analysis={analysisResult} /></div>
+            <div className="ace-reveal">
+              <SubdomainManager
+                subdomains={subdomains}
+                weights={weights}
+                mainDomain={analysisResult.domain}
+                onAdd={handleAddSubdomain}
+                onRemove={handleRemoveSubdomain}
+                onToggleIncluded={handleToggleSubdomainIncluded}
+                combinedWeightedCount={combinedWeightedCount}
+                combinedRawCount={combinedRawCount}
+              />
+            </div>
+            <div className="ace-reveal"><RecommendedTier analysis={analysisResult} recommendation={recommendation} /></div>
+            <div className="ace-reveal">
+              <QuoteBuilder
+                quoteState={syncedQuoteState}
+                quoteCalc={quoteCalc}
+                recommendation={recommendation}
+                onChange={setQuoteState}
+              />
+            </div>
+            <div className="ace-reveal"><URLBreakdown analysis={analysisResult} /></div>
+            <div className="ace-reveal">
+              <ExecutiveSummary
+                rawPageCount={combinedRawCount}
+                weightedPageCount={combinedWeightedCount}
+                recommendation={recommendation}
+              />
+            </div>
+            <div className="ace-reveal">
+              <ExportSection
+                analysis={analysisResult}
+                recommendation={recommendation}
+                quoteCalc={quoteCalc}
+                quoteState={syncedQuoteState}
+              />
+            </div>
+          </>
+        )}
+
+        {/* Empty state */}
+        {!analysisResult && !isLoading && !progress.isError && (
+          <div className="ace-panel ace-panel--inset text-center py-16">
+            <div className="ace-display-meta mb-3">Awaiting input</div>
+            <p className="font-display italic text-[28px] leading-tight text-ink max-w-md mx-auto">
+              Paste a sitemap above, or load the demo to see a full proposal take shape.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

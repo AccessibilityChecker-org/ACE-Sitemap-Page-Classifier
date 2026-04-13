@@ -56,12 +56,13 @@ export default function ExportSection({ analysis, recommendation, quoteCalc, quo
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-      <div className="flex items-center gap-3 mb-5">
-        <div className="flex items-center justify-center w-7 h-7 bg-green-600 text-white text-xs font-bold rounded-full">
-          8
+    <div className="ace-panel">
+      <div className="flex items-baseline gap-5 mb-6">
+        <div className="ace-num">8</div>
+        <div className="flex flex-col gap-0.5">
+          <span className="ace-section-kicker">Section 8</span>
+          <h2 className="ace-title">Export</h2>
         </div>
-        <h2 className="text-gray-900 font-semibold text-base">Export</h2>
       </div>
 
       <div className="grid sm:grid-cols-3 gap-3">
