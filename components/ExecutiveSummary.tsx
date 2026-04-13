@@ -131,7 +131,7 @@ export default function ExecutiveSummary({
           </button>
         )}
         <p className="text-xs text-gray-400 ml-auto">
-          Numbers update live from your scan — edit the text freely before copying.
+          Numbers update live from your scan. Edit the text freely before copying.
         </p>
       </div>
     </div>

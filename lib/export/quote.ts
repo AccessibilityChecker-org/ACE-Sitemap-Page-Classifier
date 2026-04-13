@@ -25,10 +25,10 @@ export function generateExecutiveSummary(
   return (
     `This proposal for ${client} presents a fully managed web accessibility service under the ${plan}. ` +
     `AccessibilityChecker.org will handle code-level WCAG 2.2 AA remediation, continuous monitoring, ` +
-    `expert audits, and VPAT reporting — covering all ongoing compliance obligations as your site evolves. ` +
+    `expert audits, and VPAT reporting, covering all ongoing compliance obligations as your site evolves. ` +
     `ACE™ weighted pricing reduces your billable scope from ${rawStr} to ${weightedStr} pages, ` +
-    `recognizing that template-driven pages require far less remediation effort — ` +
-    `saving ${savingsStr} per year vs. standard per-page pricing.`
+    `recognizing that template-driven pages require far less remediation effort. ` +
+    `This saves ${savingsStr} per year vs. standard per-page pricing.`
   )
 }
 
