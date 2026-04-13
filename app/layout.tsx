@@ -1,50 +1,41 @@
 import type { Metadata } from 'next'
-import { Instrument_Serif, IBM_Plex_Sans, IBM_Plex_Mono } from 'next/font/google'
+import { IBM_Plex_Sans, JetBrains_Mono } from 'next/font/google'
 import Image from 'next/image'
 import './globals.css'
 
-// Editorial display serif — italic variant used for section numerals & headlines.
-const instrumentSerif = Instrument_Serif({
-  subsets: ['latin'],
-  weight: '400',
-  style: ['normal', 'italic'],
-  variable: '--font-display',
-  display: 'swap',
-})
-
-// Body sans — IBM Plex Sans. Characterful, editorial, not Inter/Arial/Roboto.
+// Body sans — IBM Plex Sans. Characterful, readable, not Inter.
 const plexSans = IBM_Plex_Sans({
   subsets: ['latin'],
-  weight: ['300', '400', '500', '600', '700'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-body',
   display: 'swap',
 })
 
-// Data / tabular display — IBM Plex Mono.
-const plexMono = IBM_Plex_Mono({
+// Mono family — used for display, data, labels, chips. Scanner/terminal aesthetic.
+const jetbrains = JetBrains_Mono({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-mono',
   display: 'swap',
 })
 
 export const metadata: Metadata = {
-  title: 'ACE™ Sitemap Page Classifier — AccessibilityChecker.org',
-  description: 'Internal quoting instrument for AccessibilityChecker.org managed accessibility services.',
+  title: 'ACE // Sitemap Scanner — AccessibilityChecker.org',
+  description: 'Internal scanning instrument for AccessibilityChecker.org managed accessibility services.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="en"
-      className={`${instrumentSerif.variable} ${plexSans.variable} ${plexMono.variable}`}
+      className={`${plexSans.variable} ${jetbrains.variable}`}
     >
       <body className="font-body antialiased">
         <header className="ace-header">
           <div className="max-w-[1280px] mx-auto px-6 lg:px-10">
-            <div className="flex items-center justify-between h-20 gap-6">
-              {/* Left: brand lockup */}
-              <div className="flex items-center gap-5 min-w-0">
+            <div className="flex items-center justify-between h-14 gap-6">
+              {/* Left: brand */}
+              <div className="flex items-center gap-4 min-w-0">
                 <div className="ace-logo-crop" aria-label="AccessibilityChecker.org">
                   <Image
                     src="/ac-logo.png"
@@ -56,42 +47,40 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   />
                 </div>
                 <span className="ace-rule-v hidden md:inline-block" aria-hidden />
-                <div className="hidden md:flex flex-col leading-tight min-w-0">
-                  <span className="ace-kicker">ACE™ Instrument</span>
-                  <span className="font-display italic text-[22px] text-ink truncate">
-                    Sitemap Page Classifier
-                  </span>
+                <div className="hidden md:flex items-center gap-2 font-mono text-[12px] text-ink">
+                  <span className="font-bold tracking-[0.04em]">ACE</span>
+                  <span className="text-[color:var(--brand)] font-bold">//</span>
+                  <span className="uppercase tracking-[0.08em] text-ink-2">Sitemap Scanner</span>
                 </div>
               </div>
 
-              {/* Right: status stack */}
-              <div className="flex items-center gap-3 shrink-0">
-                <span className="ace-badge ace-badge--ochre">
-                  <span className="tracking-[0.14em]">INTERNAL ONLY</span>
+              {/* Right: status */}
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="ace-chip-mono">
+                  <span>INTERNAL</span>
                 </span>
-                <span className="ace-badge ace-badge--live">
+                <span className="ace-chip-mono ace-chip-mono--live">
                   <span className="ace-dot" aria-hidden />
-                  <span className="tracking-[0.14em]">LIVE</span>
+                  <span>SYSTEM OK</span>
                 </span>
               </div>
             </div>
           </div>
-          <div className="ace-header-rule" aria-hidden />
         </header>
 
         <main className="min-h-screen">{children}</main>
 
-        <footer className="mt-24 border-t border-[color:var(--rule)]">
-          <div className="max-w-[1280px] mx-auto px-6 lg:px-10 py-10 grid md:grid-cols-3 gap-6 items-start">
-            <div className="font-display italic text-[26px] leading-none text-ink">
-              AccessibilityChecker<span className="text-[color:var(--forest)]">.</span>
+        <footer className="mt-24 border-t border-rule bg-surface">
+          <div className="max-w-[1280px] mx-auto px-6 lg:px-10 py-8 grid md:grid-cols-3 gap-4 items-center">
+            <div className="font-mono text-[13px] font-bold tracking-[0.02em] text-ink">
+              ACE <span className="text-[color:var(--brand)]">//</span> SITEMAP SCANNER
             </div>
-            <p className="text-sm text-ink-muted md:col-span-1">
-              ACE™ Sitemap Page Classifier is an internal instrument for composing
-              managed-accessibility proposals. Distribute outputs under NDA only.
+            <p className="text-[13px] text-ink-3">
+              Internal instrument for composing managed-accessibility proposals.
+              Distribute outputs under NDA only.
             </p>
-            <div className="text-xs font-mono text-ink-muted md:text-right uppercase tracking-[0.18em]">
-              © {new Date().getFullYear()} &nbsp;·&nbsp; v1 &nbsp;·&nbsp; Internal
+            <div className="font-mono text-[10px] text-ink-4 md:text-right uppercase tracking-[0.22em]">
+              © {new Date().getFullYear()} &nbsp;·&nbsp; v1 &nbsp;·&nbsp; INTERNAL
             </div>
           </div>
         </footer>

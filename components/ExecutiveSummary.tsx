@@ -61,7 +61,7 @@ export default function ExecutiveSummary({
   return (
     <div className="ace-panel">
       <div className="flex items-baseline gap-5 mb-6">
-        <div className="ace-num ace-num--ochre">§</div>
+        <span className="ace-num">A</span>
         <div className="flex flex-col gap-0.5 flex-1">
           <span className="ace-section-kicker">Appendix A</span>
           <h2 className="ace-title">Executive Summary</h2>
@@ -84,7 +84,7 @@ export default function ExecutiveSummary({
               setOverrideText(null)
             }}
             placeholder="e.g. Acme Corp"
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
+            className="ace-input w-full"
           />
         </div>
         <div>
@@ -99,7 +99,7 @@ export default function ExecutiveSummary({
               setOverrideText(null)
             }}
             placeholder="e.g. ACE Managed Plus"
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"
+            className="ace-input w-full"
           />
         </div>
       </div>
@@ -109,32 +109,26 @@ export default function ExecutiveSummary({
           value={displayText}
           onChange={(e) => setOverrideText(e.target.value)}
           rows={7}
-          className="w-full px-3 py-2.5 text-sm text-gray-800 leading-relaxed border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 font-[inherit]"
+          className="ace-input w-full leading-relaxed"
+          style={{ background: 'var(--surface-2)' }}
         />
       </div>
 
-      <div className="flex items-center gap-2 mt-3">
+      <div className="flex items-center gap-2 mt-4">
         <button
           onClick={handleCopy}
-          className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-            copied
-              ? 'bg-green-100 text-green-800 border border-green-200'
-              : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-          }`}
+          className={copied ? 'ace-btn ace-btn--brand' : 'ace-btn'}
         >
-          {copied ? <Check size={16} /> : <Copy size={16} />}
-          {copied ? 'Copied!' : 'Copy Summary'}
+          {copied ? <Check size={14} /> : <Copy size={14} />}
+          {copied ? 'Copied' : 'Copy summary'}
         </button>
         {overrideText !== null && (
-          <button
-            onClick={handleReset}
-            className="inline-flex items-center gap-2 px-3 py-2 text-xs font-medium text-gray-600 hover:text-gray-900 border border-gray-200 rounded-lg hover:bg-gray-50"
-          >
-            Reset to generated
+          <button onClick={handleReset} className="ace-btn ace-btn--ghost">
+            Reset
           </button>
         )}
-        <p className="text-xs text-gray-400 ml-auto">
-          Numbers update live from your scan. Edit the text freely before copying.
+        <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-4 ml-auto">
+          Numbers update live from the scan
         </p>
       </div>
     </div>

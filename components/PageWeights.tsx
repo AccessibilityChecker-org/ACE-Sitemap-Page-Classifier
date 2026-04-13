@@ -24,25 +24,25 @@ export default function PageWeightsEditor({ weights, onChange }: Props) {
       key: 'template',
       label: 'Template',
       description: 'The single structural template page, e.g. one product-page template.',
-      accent: 'var(--forest)',
+      accent: 'var(--brand-deep)',
     },
     {
       key: 'unique',
       label: 'Unique',
       description: 'One-of-a-kind pages like Homepage, Contact, About. No repeating pattern.',
-      accent: 'var(--ochre)',
+      accent: 'var(--warn)',
     },
     {
       key: 'content',
       label: 'Content',
       description: 'Repeated content pages sharing a template, e.g. 6,000 product detail pages.',
-      accent: 'var(--moss)',
+      accent: 'var(--brand)',
     },
     {
       key: 'dynamic',
       label: 'Dynamic',
       description: 'Pages generated on-demand: search, account, cart, filters.',
-      accent: 'var(--crimson)',
+      accent: 'var(--alert)',
     },
   ]
 
@@ -90,8 +90,8 @@ export default function PageWeightsEditor({ weights, onChange }: Props) {
 
       {isExpanded && (
         <div className="mt-6 space-y-5">
-          <div className="flex items-start gap-3 p-4 bg-[color:var(--ochre-soft)] border-l-2 border-[color:var(--ochre)]">
-            <Info size={14} className="text-ochre mt-0.5 shrink-0" />
+          <div className="flex items-start gap-3 p-4 bg-[color:var(--warn-soft)] border-l-2 border-[color:var(--warn)]">
+            <Info size={14} className="text-warn mt-0.5 shrink-0" />
             <p className="text-xs text-ink leading-relaxed">
               Weights decide how many &ldquo;effective pages&rdquo; each URL type counts as.
               A product-page template counts as 1.0. Its thousands of content copies count
@@ -125,7 +125,7 @@ export default function PageWeightsEditor({ weights, onChange }: Props) {
           </div>
 
           {/* Worked example */}
-          <div className="ace-chip" style={{ background: 'var(--paper-sunk)' }}>
+          <div className="ace-chip" style={{ background: 'var(--surface-2)' }}>
             <p className="ace-section-kicker mb-3">Worked example</p>
             <div className="space-y-1.5 text-[13px] text-ink">
               <div className="flex items-center justify-between">

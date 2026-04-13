@@ -7,11 +7,14 @@ interface Props {
   analysis: AnalysisResult
 }
 
+// Semantic 4-state palette for the scanner's output classes.
+// template → cyan (audited once), content → brand green (derivative mass),
+// unique → neutral ink (one-offs), dynamic → alert red (interactive testing).
 const COLORS = {
-  template: { bg: 'bg-blue-500', text: 'text-blue-600', label: 'Template', light: 'bg-blue-50' },
-  content: { bg: 'bg-green-500', text: 'text-green-600', label: 'Content', light: 'bg-green-50' },
-  unique: { bg: 'bg-amber-500', text: 'text-amber-600', label: 'Unique', light: 'bg-amber-50' },
-  dynamic: { bg: 'bg-red-500', text: 'text-red-500', label: 'Dynamic', light: 'bg-red-50' },
+  template: { bg: 'bg-[color:var(--scan)]',      text: 'text-[color:var(--scan)]',       label: 'Template', light: 'bg-[color:var(--scan-soft)]'    },
+  content:  { bg: 'bg-[color:var(--brand)]',     text: 'text-[color:var(--brand-deep)]', label: 'Content',  light: 'bg-[color:var(--brand-tint)]'   },
+  unique:   { bg: 'bg-[color:var(--ink-2)]',     text: 'text-[color:var(--ink-2)]',      label: 'Unique',   light: 'bg-[color:var(--surface-2)]'    },
+  dynamic:  { bg: 'bg-[color:var(--alert)]',     text: 'text-[color:var(--alert)]',      label: 'Dynamic',  light: 'bg-[color:var(--alert-soft)]'   },
 }
 
 function formatNum(n: number): string {
@@ -55,9 +58,9 @@ export default function AnalysisOverview({ analysis }: Props) {
       label: 'Template Types',
       value: formatNum(analysis.templateTypesCount),
       sub: 'Repeating page patterns',
-      color: 'text-blue-600',
-      bg: 'bg-blue-50',
-      border: 'border-blue-100',
+      color: 'text-[color:var(--scan)]',
+      bg: 'bg-[color:var(--scan-soft)]',
+      border: 'border-[color:var(--scan-soft)]',
     },
     {
       label: 'Content Pages',

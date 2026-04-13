@@ -90,12 +90,12 @@ export default function ExportSection({ analysis, recommendation, quoteCalc, quo
           }`}
         >
           <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-            copied ? 'bg-green-200' : 'bg-blue-100 group-hover:bg-blue-200'
+            copied ? 'bg-green-200' : 'bg-[color:var(--scan-soft)] group-hover:bg-[color:var(--scan-soft)]'
           }`}>
             {copied ? (
               <Check size={18} className="text-green-700" />
             ) : (
-              <Copy size={18} className="text-blue-700" />
+              <Copy size={18} className="text-[color:var(--scan)]" />
             )}
           </div>
           <div className="text-center">

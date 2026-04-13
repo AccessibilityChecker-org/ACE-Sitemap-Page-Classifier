@@ -247,7 +247,7 @@ export default function QuoteBuilder({ quoteState, quoteCalc, recommendation, on
 
           {/* Plan details */}
           {quoteState.basePlan && (
-            <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100 text-xs text-blue-700">
+            <div className="mt-3 p-3 bg-[color:var(--scan-soft)] rounded-lg border border-[color:var(--scan-soft)] text-xs text-[color:var(--scan)]">
               <p className="font-semibold mb-1">{quoteState.basePlan.name} Plan Details:</p>
               <p>Up to {quoteState.basePlan.maxWeightedPages.toLocaleString()} weighted pages</p>
               <p>Audit frequency: {quoteState.basePlan.auditFrequency}</p>

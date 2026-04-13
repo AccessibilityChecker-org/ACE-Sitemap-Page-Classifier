@@ -9,19 +9,20 @@ interface Props {
 export default function LoadingState({ progress }: Props) {
   if (progress.isError) {
     return (
-      <div className="ace-panel" style={{ borderTopColor: 'var(--crimson)' }}>
-        <div className="flex items-baseline gap-5">
-          <div className="ace-num" style={{ color: 'var(--crimson)' }}>!</div>
-          <div className="flex flex-col gap-1 flex-1">
-            <span className="ace-section-kicker" style={{ color: 'var(--crimson)' }}>
-              Error
-            </span>
-            <h3 className="ace-title">Analysis failed</h3>
-            <p className="text-ink-muted text-sm mt-2">
+      <div className="ace-panel" style={{ borderColor: 'var(--alert)', background: 'var(--alert-soft)' }}>
+        <div className="flex items-start gap-4">
+          <span className="ace-chip-mono ace-chip-mono--alert shrink-0">
+            <span>ERR</span>
+          </span>
+          <div className="flex flex-col gap-1 flex-1 min-w-0">
+            <h3 className="font-mono font-bold text-[15px] text-ink uppercase tracking-[0.02em]">
+              Scan failed
+            </h3>
+            <p className="text-ink-2 text-sm mt-1">
               {progress.errorMessage || 'An unexpected error occurred.'}
             </p>
-            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-ink-soft mt-1">
-              Check the sitemap URL or paste the XML directly.
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-3 mt-1">
+              # check the sitemap URL or paste XML directly
             </p>
           </div>
         </div>
@@ -30,60 +31,72 @@ export default function LoadingState({ progress }: Props) {
   }
 
   const steps = [
-    { label: 'Fetch',    threshold: 15 },
-    { label: 'Parse',    threshold: 30 },
-    { label: 'Classify', threshold: 60 },
-    { label: 'Price',    threshold: 85 },
-    { label: 'Done',     threshold: 100 },
+    { label: 'FETCH',    threshold: 15 },
+    { label: 'PARSE',    threshold: 30 },
+    { label: 'CLASSIFY', threshold: 60 },
+    { label: 'PRICE',    threshold: 85 },
+    { label: 'DONE',     threshold: 100 },
   ]
 
   return (
     <div className="ace-panel ace-panel--inset">
-      <div className="grid md:grid-cols-[auto_1fr] gap-8 items-center">
-        <div className="font-display italic leading-none text-ink" style={{ fontSize: '88px', letterSpacing: '-0.02em' }}>
+      <div className="flex items-center gap-3 mb-4">
+        <span className="ace-chip-mono ace-chip-mono--live">
+          <span className="ace-dot ace-dot--cyan" aria-hidden />
+          <span>SCANNING</span>
+        </span>
+        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-ink-3">
+          {progress.step}
+        </span>
+      </div>
+
+      <div className="grid md:grid-cols-[auto_1fr] gap-6 items-center">
+        <div className="font-mono font-bold leading-none text-ink tabular-nums" style={{ fontSize: '64px', letterSpacing: '-0.04em' }}>
           {String(progress.percent).padStart(2, '0')}
-          <span className="text-ink-soft">%</span>
+          <span className="text-[color:var(--brand)]">%</span>
         </div>
         <div className="min-w-0">
-          <div className="ace-section-kicker mb-1">In progress</div>
-          <h3 className="ace-title mb-1">{progress.step}</h3>
-          <p className="text-ink-muted text-sm mb-4">{progress.detail}</p>
+          <p className="font-mono text-[12px] text-ink-2 mb-3">{progress.detail}</p>
 
-          {/* Progress rule */}
-          <div className="h-[3px] bg-[color:var(--rule)] relative overflow-hidden">
+          {/* Progress bar with sweep overlay */}
+          <div className="h-[6px] bg-[color:var(--surface)] relative overflow-hidden border border-rule">
             <div
-              className="absolute inset-y-0 left-0 bg-[color:var(--forest)] transition-all duration-500 ease-out"
+              className="absolute inset-y-0 left-0 bg-[color:var(--brand)] transition-all duration-500 ease-out"
               style={{ width: `${progress.percent}%` }}
             />
+            {progress.percent < 100 && (
+              <div className="ace-sweep absolute inset-0 pointer-events-none" />
+            )}
           </div>
 
           {/* Step markers */}
-          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
+          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
             {steps.map((step, i) => {
               const done   = progress.percent >= step.threshold
               const active = !done && progress.percent >= step.threshold - 15
               return (
                 <div
                   key={step.label}
-                  className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em]"
+                  className="flex items-center gap-2 font-mono text-[10px] tracking-[0.18em]"
                   style={{
                     color: done
-                      ? 'var(--forest)'
+                      ? 'var(--brand-deep)'
                       : active
                       ? 'var(--ink)'
-                      : 'var(--ink-soft)',
+                      : 'var(--ink-4)',
                   }}
                 >
                   <span
-                    className="w-3 h-3 border-[1.5px] flex items-center justify-center"
+                    className="w-[11px] h-[11px] flex items-center justify-center"
                     style={{
-                      borderColor: done ? 'var(--forest)' : 'var(--rule-strong)',
-                      background: done ? 'var(--forest)' : 'transparent',
+                      border: `1.5px solid ${done ? 'var(--brand)' : active ? 'var(--ink-2)' : 'var(--rule-2)'}`,
+                      background: done ? 'var(--brand)' : 'transparent',
+                      borderRadius: '2px',
                     }}
                   >
                     {done && (
-                      <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-                        <path d="M1.5 4l1.5 1.5L6.5 2" stroke="#F4EEDF" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                      <svg width="7" height="7" viewBox="0 0 8 8" fill="none">
+                        <path d="M1.5 4l1.5 1.5L6.5 2" stroke="#063D29" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     )}
                   </span>

@@ -271,38 +271,48 @@ export default function HomePage() {
 
   return (
     <div className="max-w-[1280px] mx-auto px-6 lg:px-10 pb-24">
-      {/* ───────── Hero ───────── */}
+      {/* ───────── Hero: scanner diagnostic ───────── */}
       <section className="ace-hero ace-reveal">
-        <div className="ace-hero-grid">
+        <div className="font-mono text-[11px] tracking-[0.22em] uppercase text-ink-3 mb-4 flex items-center gap-3">
+          <span className="ace-caret">$&gt;</span>
+          <span>ace-scanner</span>
+          <span className="ace-tick" aria-hidden />
+          <span>build.v1</span>
+          <span className="ace-tick" aria-hidden />
+          <span className="text-[color:var(--brand-deep)]">ready</span>
+        </div>
+        <h1 className="ace-hero-lead">
+          Sitemap<span className="slash">//</span>scanner
+          <br />
+          for accessibility
+          <br />
+          <span className="text-[color:var(--brand)]">quotes.</span>
+        </h1>
+        <p className="mt-6 max-w-2xl text-[15px] leading-[1.55] text-ink-2">
+          Point it at any sitemap. It classifies every page, detects template
+          repetition, applies weighted pricing, and composes a proposal. No
+          guesswork, no crawling — just the map.
+        </p>
+
+        {/* Scan-band — 4-step pipeline */}
+        <div className="ace-scanband mt-10">
           <div>
-            <div className="ace-display-meta mb-5">
-              <span>Edition 01</span>
-              <span className="ace-tick" aria-hidden />
-              <span>Compendium for pre-sales engineering</span>
-            </div>
-            <h1 className="ace-display">
-              The sitemap,<br />
-              classified by <em>form</em> &amp; <em>function</em>.
-            </h1>
+            <span>Stage 01</span>
+            <strong>Load</strong>
           </div>
-          <div className="flex flex-col gap-4 md:items-end">
-            <p className="text-ink-muted text-[15px] leading-[1.55] max-w-sm md:text-right">
-              A page-by-page instrument that separates templates from content,
-              surfaces the shape of a site, and composes managed-accessibility
-              proposals worth pressing into a PDF.
-            </p>
-            <div className="flex gap-2 items-center text-[11px] font-mono uppercase tracking-[0.22em] text-ink-soft">
-              <span>01 Load</span>
-              <span className="ace-tick" aria-hidden />
-              <span>02 Weight</span>
-              <span className="ace-tick" aria-hidden />
-              <span>03 Classify</span>
-              <span className="ace-tick" aria-hidden />
-              <span>04 Quote</span>
-            </div>
+          <div>
+            <span>Stage 02</span>
+            <strong>Weight</strong>
+          </div>
+          <div>
+            <span>Stage 03</span>
+            <strong>Classify</strong>
+          </div>
+          <div>
+            <span>Stage 04</span>
+            <strong>Quote</strong>
           </div>
         </div>
-        <div className="mt-10 h-[2px] bg-[color:var(--rule-strong)]" aria-hidden />
       </section>
 
       <div className="space-y-10 pt-6">
@@ -366,10 +376,15 @@ export default function HomePage() {
 
         {/* Empty state */}
         {!analysisResult && !isLoading && !progress.isError && (
-          <div className="ace-panel ace-panel--inset text-center py-16">
-            <div className="ace-display-meta mb-3">Awaiting input</div>
-            <p className="font-display italic text-[28px] leading-tight text-ink max-w-md mx-auto">
-              Paste a sitemap above, or load the demo to see a full proposal take shape.
+          <div className="ace-panel ace-panel--inset">
+            <div className="font-mono text-[11px] tracking-[0.22em] uppercase text-ink-3 mb-2 flex items-center gap-2">
+              <span className="ace-caret">$&gt;</span>
+              <span>awaiting input</span>
+              <span className="ace-dot ace-dot--cyan" aria-hidden />
+            </div>
+            <p className="font-mono text-[15px] text-ink-2 leading-relaxed">
+              Paste a sitemap above, or run the demo to see the full pipeline execute.
+              <span className="text-ink-4"> # no target locked</span>
             </p>
           </div>
         )}

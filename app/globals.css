@@ -3,68 +3,109 @@
 @tailwind utilities;
 
 /* =========================================================================
-   ACE — Editorial Instrument
-   A paper-toned audit aesthetic. Ink + cream + forest + ochre.
+   ACE — Scanner Instrument
+   Tech / observability tool aesthetic. Monospace-forward, thin rules,
+   modern vibrant green (echoes AccessibilityChecker.org brand mark).
    ========================================================================= */
 
 :root {
-  /* Paper & ink */
-  --paper:         #F4EEDF;  /* warm cream background */
-  --paper-raised: #FBF7EC;  /* slightly lighter for panels */
-  --paper-sunk:    #EDE5D1;  /* slightly darker for wells/insets */
-  --ink:           #0C0C0D;  /* near-black for text */
-  --ink-muted:     #5E5B54;  /* muted ink for secondary text */
-  --ink-soft:      #8A867C;  /* softest ink for meta */
-  --rule:          #D6CEB9;  /* warm hairline rule */
-  --rule-strong:   #2A2825;  /* strong rule for section tops */
+  /* Surface */
+  --bg:          #FAFAF7;
+  --surface:     #FFFFFF;
+  --surface-2:  #F4F4EE;   /* insets / wells */
 
-  /* Accents */
-  --forest:        #143F2C;  /* serious deep green (brand-adjacent) */
-  --forest-soft:   #D8E4D6;
-  --forest-ink:    #0C2A1D;
-  --moss:          #4E7A5D;  /* mid-green for pills */
-  --ochre:         #B5691F;  /* editorial orange */
-  --ochre-soft:    #F1E1C5;
-  --crimson:       #8C2A22;  /* alerts */
-  --crimson-soft:  #F0D6D0;
+  /* Ink */
+  --ink:         #0A0A0A;
+  --ink-2:       #3F3F46;
+  --ink-3:       #6B7280;
+  --ink-4:       #9CA3AF;
 
-  /* Type scale helpers */
-  --tracking-kicker: 0.22em;
+  /* Rules */
+  --rule:        #E6E6E0;
+  --rule-2:      #D4D4CE;
+  --rule-strong: #0A0A0A;
+
+  /* Brand — modern vibrant green (AC lockup palette) */
+  --brand:       #10C98A;
+  --brand-2:     #0EB77C;   /* hover/pressed */
+  --brand-deep:  #066B48;
+  --brand-ink:   #063D29;
+  --brand-soft:  #DFF8EA;
+  --brand-tint:  #ECFDF5;
+
+  /* Secondary signal colors */
+  --scan:        #06B6D4;   /* cyan — in-progress / monitoring */
+  --scan-soft:   #E0F7FB;
+  --warn:        #D97706;   /* amber */
+  --warn-soft:   #FEF3C7;
+  --alert:       #DC2626;   /* red */
+  --alert-soft:  #FEE2E2;
+
+  /* Monochrome category greys (replaces the rainbow) */
+  --gray-50:  #FAFAFA;
+  --gray-100: #F5F5F5;
+  --gray-200: #E5E5E5;
+  --gray-300: #D4D4D4;
+  --gray-400: #A3A3A3;
+  --gray-500: #737373;
+  --gray-600: #525252;
+  --gray-700: #3F3F46;
+  --gray-800: #27272A;
+  --gray-900: #18181B;
+
+  /* Typographic tracking tokens */
+  --tr-code: 0.04em;
+  --tr-label: 0.16em;
+  --tr-kicker: 0.22em;
 }
 
 html, body {
-  background: var(--paper);
+  background: var(--bg);
   color: var(--ink);
 }
 
 body {
-  font-feature-settings: 'ss01', 'cv11', 'tnum';
+  font-feature-settings: 'ss01', 'cv11', 'tnum', 'zero';
+  /* very faint dot grid — scanner plot */
   background-image:
-    /* very subtle paper grain */
-    radial-gradient(circle at 20% 10%, rgba(40,30,10,0.015) 0%, transparent 40%),
-    radial-gradient(circle at 80% 70%, rgba(40,30,10,0.018) 0%, transparent 40%);
+    radial-gradient(rgba(10, 10, 10, 0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: 0 0;
   background-attachment: fixed;
 }
 
-/* ---- Fonts ---- */
+/* Fonts */
 .font-body    { font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif; }
-.font-mono    { font-family: var(--font-mono), ui-monospace, monospace; }
-.font-display { font-family: var(--font-display), ui-serif, Georgia, serif; }
+.font-mono    { font-family: var(--font-mono), ui-monospace, 'SFMono-Regular', Menlo, monospace; }
+.font-display { font-family: var(--font-display), var(--font-mono), ui-monospace, monospace; }
 
-/* Named color utilities reusable in className="text-ink" etc. */
-.text-ink         { color: var(--ink); }
-.text-ink-muted   { color: var(--ink-muted); }
-.text-ink-soft    { color: var(--ink-soft); }
-.text-forest      { color: var(--forest); }
-.text-ochre       { color: var(--ochre); }
-.text-crimson     { color: var(--crimson); }
-.bg-paper         { background: var(--paper); }
-.bg-paper-raised  { background: var(--paper-raised); }
-.bg-paper-sunk    { background: var(--paper-sunk); }
-.bg-forest        { background: var(--forest); }
-.bg-forest-soft   { background: var(--forest-soft); }
-.bg-ochre         { background: var(--ochre); }
-.bg-ochre-soft    { background: var(--ochre-soft); }
+/* Named color utilities */
+.text-ink       { color: var(--ink); }
+.text-ink-2     { color: var(--ink-2); }
+.text-ink-3     { color: var(--ink-3); }
+.text-ink-4     { color: var(--ink-4); }
+.text-brand     { color: var(--brand-deep); }
+.text-scan      { color: var(--scan); }
+.text-warn      { color: var(--warn); }
+.text-alert     { color: var(--alert); }
+/* Back-compat aliases for the previous editorial palette names */
+.text-ink-muted { color: var(--ink-2); }
+.text-ink-soft  { color: var(--ink-3); }
+.text-forest    { color: var(--brand-deep); }
+.text-ochre     { color: var(--warn); }
+
+.bg-bg          { background: var(--bg); }
+.bg-surface     { background: var(--surface); }
+.bg-surface-2   { background: var(--surface-2); }
+.bg-brand       { background: var(--brand); }
+.bg-brand-soft  { background: var(--brand-soft); }
+.bg-brand-tint  { background: var(--brand-tint); }
+.bg-scan-soft   { background: var(--scan-soft); }
+.bg-warn-soft   { background: var(--warn-soft); }
+.bg-alert-soft  { background: var(--alert-soft); }
+
+.border-rule    { border-color: var(--rule); }
+.border-rule-2  { border-color: var(--rule-2); }
 
 /* =========================================================================
    HEADER
@@ -73,38 +114,35 @@ body {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: var(--paper);
-  backdrop-filter: saturate(1.1);
-}
-.ace-header-rule {
-  height: 2px;
-  background: var(--rule-strong);
-}
-.ace-rule-v {
-  width: 1px;
-  height: 36px;
-  background: var(--rule);
-}
-.ace-kicker {
-  font-family: var(--font-mono), ui-monospace, monospace;
-  font-size: 10px;
-  letter-spacing: var(--tracking-kicker);
-  text-transform: uppercase;
-  color: var(--ink-soft);
+  background: var(--surface);
+  border-bottom: 1px solid var(--rule);
 }
 
-/* Logo crop — the source PNG has ~40% whitespace. We zoom the bitmap
-   inside a clipped frame so only the logo-lockup shows. */
+.ace-kicker {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  letter-spacing: var(--tr-kicker);
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.ace-rule-v {
+  width: 1px;
+  height: 22px;
+  background: var(--rule-2);
+}
+
+/* Logo — tight crop of the source PNG (which has built-in padding). */
 .ace-logo-crop {
-  width: 188px;
-  height: 44px;
+  width: 168px;
+  height: 36px;
   overflow: hidden;
   position: relative;
   display: inline-block;
 }
 .ace-logo-img {
   position: absolute;
-  width: 360px;   /* ≈ 1.9× container width — zooms past the padding */
+  width: 320px;
   height: auto;
   left: 50%;
   top: 50%;
@@ -114,119 +152,133 @@ body {
 }
 
 /* =========================================================================
-   BADGES
+   STATUS CHIPS — [LIVE] [OK] [SCAN] bracketed mono
    ========================================================================= */
-.ace-badge {
+.ace-chip-mono {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 10px 4px;
+  padding: 4px 8px;
   font-family: var(--font-mono), monospace;
   font-size: 10px;
   font-weight: 500;
+  letter-spacing: var(--tr-label);
+  text-transform: uppercase;
+  color: var(--ink-2);
   border: 1px solid var(--rule);
+  background: var(--surface);
   border-radius: 2px;
-  background: var(--paper-raised);
-  color: var(--ink);
   white-space: nowrap;
 }
-.ace-badge--ochre {
-  color: var(--ochre);
-  border-color: color-mix(in srgb, var(--ochre) 40%, var(--rule));
-  background: var(--ochre-soft);
+.ace-chip-mono--live {
+  color: var(--brand-deep);
+  border-color: color-mix(in srgb, var(--brand) 40%, var(--rule));
+  background: var(--brand-tint);
 }
-.ace-badge--forest {
-  color: var(--forest);
-  border-color: color-mix(in srgb, var(--forest) 40%, var(--rule));
-  background: var(--forest-soft);
+.ace-chip-mono--warn {
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 35%, var(--rule));
+  background: var(--warn-soft);
 }
-.ace-badge--live {
-  color: var(--forest);
-  border-color: color-mix(in srgb, var(--forest) 40%, var(--rule));
-  background: var(--paper-raised);
+.ace-chip-mono--alert {
+  color: var(--alert);
+  border-color: color-mix(in srgb, var(--alert) 35%, var(--rule));
+  background: var(--alert-soft);
 }
+
 .ace-dot {
   width: 6px;
   height: 6px;
   border-radius: 999px;
-  background: var(--forest);
-  box-shadow: 0 0 0 0 color-mix(in srgb, var(--forest) 60%, transparent);
-  animation: ace-pulse 2s ease-out infinite;
+  background: var(--brand);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand) 60%, transparent);
+  animation: ace-pulse 1.6s ease-out infinite;
+}
+.ace-dot--cyan {
+  background: var(--scan);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--scan) 60%, transparent);
+  animation-name: ace-pulse-cyan;
 }
 @keyframes ace-pulse {
-  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--forest) 60%, transparent); }
-  70%  { box-shadow: 0 0 0 6px color-mix(in srgb, var(--forest) 0%, transparent); }
-  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--forest) 0%, transparent); }
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand) 60%, transparent); }
+  70%  { box-shadow: 0 0 0 6px color-mix(in srgb, var(--brand) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--brand) 0%, transparent); }
+}
+@keyframes ace-pulse-cyan {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--scan) 60%, transparent); }
+  70%  { box-shadow: 0 0 0 6px color-mix(in srgb, var(--scan) 0%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--scan) 0%, transparent); }
 }
 
 /* =========================================================================
-   PANELS (the new card chrome)
-   Paper-raised block with a heavy top rule + thin bottom rule.
-   Replaces the generic rounded-xl shadow-sm card everywhere.
+   PANELS — square, white, 1px rule. Replaces the old rounded-card chrome.
    ========================================================================= */
 .ace-panel {
   position: relative;
-  background: var(--paper-raised);
-  border-top: 2px solid var(--rule-strong);
-  border-bottom: 1px solid var(--rule);
-  padding: 28px 30px 30px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 24px 28px 28px;
 }
 .ace-panel--inset {
-  background: var(--paper-sunk);
-  border-top-color: var(--rule);
+  background: var(--surface-2);
 }
-.ace-panel--forest {
-  background: var(--forest);
-  color: #F1EAD4;
-  border-top-color: var(--forest-ink);
-  border-bottom-color: var(--forest-ink);
+.ace-panel--brand {
+  background: var(--brand-tint);
+  border-color: color-mix(in srgb, var(--brand) 30%, var(--rule));
 }
 
-/* A left-gutter section numeral in italic display serif. Sits inside .ace-panel.
-   Usage: add <div class="ace-num">III</div> or plain number inside the panel header. */
+/* Section head — [NN] SECTION_NAME in mono */
 .ace-num {
-  font-family: var(--font-display), serif;
-  font-style: italic;
-  font-size: 54px;
-  line-height: 0.85;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  font-weight: 600;
   color: var(--ink);
-  letter-spacing: -0.02em;
+  background: var(--bg);
+  border: 1px solid var(--rule-2);
+  border-radius: 2px;
+  letter-spacing: var(--tr-label);
 }
-.ace-num--forest { color: var(--forest); }
-.ace-num--ochre  { color: var(--ochre); }
+.ace-num--brand {
+  color: var(--brand-deep);
+  background: var(--brand-tint);
+  border-color: color-mix(in srgb, var(--brand) 35%, var(--rule));
+}
 
 .ace-section-kicker {
   font-family: var(--font-mono), monospace;
   font-size: 10px;
-  letter-spacing: var(--tracking-kicker);
+  letter-spacing: var(--tr-kicker);
   text-transform: uppercase;
-  color: var(--ink-soft);
+  color: var(--ink-3);
 }
 
 .ace-title {
-  font-family: var(--font-display), serif;
-  font-style: italic;
-  font-weight: 400;
-  font-size: 30px;
-  line-height: 1.02;
+  font-family: var(--font-mono), monospace;
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1.2;
   letter-spacing: -0.01em;
   color: var(--ink);
 }
 
-/* Inline sub-cards inside a panel (KPI blocks, pill clusters, etc.) */
+/* Sub-cards inside panels */
 .ace-chip {
-  background: var(--paper);
+  background: var(--surface);
   border: 1px solid var(--rule);
-  padding: 14px 16px;
-  border-radius: 2px;
+  padding: 12px 14px;
+  border-radius: 3px;
 }
 
-/* Mono numeric display — use for big stat numbers */
+/* Mono numeric stat */
 .ace-stat {
   font-family: var(--font-mono), monospace;
-  font-weight: 500;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 
 /* =========================================================================
@@ -237,133 +289,165 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 18px;
+  padding: 9px 16px;
   font-family: var(--font-mono), monospace;
   font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
+  font-weight: 600;
+  letter-spacing: var(--tr-label);
   text-transform: uppercase;
-  border: 1px solid var(--rule-strong);
+  border: 1px solid var(--ink);
   background: var(--ink);
-  color: var(--paper);
-  border-radius: 2px;
+  color: var(--surface);
+  border-radius: 3px;
   cursor: pointer;
-  transition: transform 120ms ease, background 120ms ease, color 120ms ease;
+  transition: transform 120ms ease, background 120ms ease, color 120ms ease, border-color 120ms ease;
 }
 .ace-btn:hover:not(:disabled) {
-  background: var(--forest);
-  border-color: var(--forest-ink);
-  transform: translateY(-1px);
+  background: var(--brand-deep);
+  border-color: var(--brand-deep);
 }
 .ace-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
+.ace-btn--brand {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--brand-ink);
+}
+.ace-btn--brand:hover:not(:disabled) {
+  background: var(--brand-2);
+  border-color: var(--brand-2);
+  color: var(--surface);
+}
 .ace-btn--ghost {
   background: transparent;
   color: var(--ink);
-  border-color: var(--rule-strong);
+  border-color: var(--rule-2);
 }
 .ace-btn--ghost:hover:not(:disabled) {
   background: var(--ink);
-  color: var(--paper);
-}
-.ace-btn--ochre {
-  background: var(--ochre);
-  border-color: var(--ochre);
-  color: #FFF8EA;
-}
-.ace-btn--ochre:hover:not(:disabled) {
-  background: #93561A;
-  border-color: #93561A;
+  color: var(--surface);
+  border-color: var(--ink);
 }
 
-/* Input baseline — paper-toned fields */
+/* =========================================================================
+   INPUTS
+   ========================================================================= */
 .ace-input {
-  background: var(--paper);
-  border: 1px solid var(--rule);
-  border-radius: 2px;
-  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--rule-2);
+  border-radius: 3px;
+  padding: 9px 12px;
   font-family: var(--font-body);
   font-size: 14px;
   color: var(--ink);
-  transition: border-color 120ms ease, background 120ms ease;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
 }
 .ace-input:focus {
   outline: none;
-  border-color: var(--rule-strong);
-  background: var(--paper-raised);
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 18%, transparent);
 }
+.ace-input::placeholder { color: var(--ink-4); }
 
 /* =========================================================================
-   HERO MARQUEE (landing block above the instrument)
+   HERO — scanner diagnostic banner
    ========================================================================= */
 .ace-hero {
-  position: relative;
-  padding: 64px 0 40px;
+  padding: 48px 0 28px;
 }
-.ace-hero-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-  gap: 48px;
-  align-items: end;
-}
-@media (max-width: 900px) {
-  .ace-hero-grid { grid-template-columns: 1fr; gap: 24px; }
-}
-.ace-display {
-  font-family: var(--font-display), serif;
-  font-style: italic;
-  font-weight: 400;
-  font-size: clamp(48px, 7.5vw, 104px);
-  line-height: 0.94;
-  letter-spacing: -0.02em;
+.ace-hero-lead {
+  font-family: var(--font-mono), monospace;
+  font-weight: 700;
+  font-size: clamp(32px, 5vw, 58px);
+  line-height: 1.0;
+  letter-spacing: -0.03em;
   color: var(--ink);
+  text-transform: uppercase;
 }
-.ace-display em {
-  font-style: normal;
-  color: var(--forest);
+.ace-hero-lead .slash {
+  color: var(--brand);
+  padding: 0 0.1em;
 }
-.ace-display-meta {
+.ace-caret {
+  color: var(--brand);
+  font-family: var(--font-mono), monospace;
+  font-weight: 700;
+}
+
+/* Scan-line decorative band */
+.ace-scanband {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+.ace-scanband > * {
+  padding: 14px 18px;
+  border-right: 1px solid var(--rule);
   font-family: var(--font-mono), monospace;
   font-size: 11px;
-  letter-spacing: var(--tracking-kicker);
+  letter-spacing: var(--tr-label);
   text-transform: uppercase;
-  color: var(--ink-soft);
+  color: var(--ink-3);
+}
+.ace-scanband > *:last-child { border-right: none; }
+.ace-scanband strong {
+  display: block;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+  text-transform: none;
 }
 
 /* =========================================================================
-   MISC — scrollbars, focus, selection
+   MISC
    ========================================================================= */
 ::selection {
-  background: var(--forest);
-  color: var(--paper);
+  background: var(--brand);
+  color: var(--brand-ink);
 }
 
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: var(--paper); }
+::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb {
-  background: var(--rule);
-  border: 2px solid var(--paper);
+  background: var(--rule-2);
+  border: 2px solid var(--bg);
   border-radius: 999px;
 }
-::-webkit-scrollbar-thumb:hover { background: var(--rule-strong); }
+::-webkit-scrollbar-thumb:hover { background: var(--ink-3); }
 
-/* Subtle reveal for first page-load (staggered via inline style on children) */
 @keyframes ace-reveal {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: none; }
 }
 .ace-reveal {
-  animation: ace-reveal 520ms cubic-bezier(0.2, 0.65, 0.2, 1) both;
+  animation: ace-reveal 420ms cubic-bezier(0.2, 0.65, 0.2, 1) both;
 }
 
-/* Footnote-style tick between stats */
 .ace-tick {
   display: inline-block;
-  width: 8px;
+  width: 10px;
   height: 1px;
-  background: var(--ink-soft);
+  background: var(--ink-4);
   vertical-align: middle;
-  margin: 0 10px;
+  margin: 0 8px;
+}
+
+/* Scanner sweep — thin moving bar used on progress/loading */
+@keyframes ace-sweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.ace-sweep::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--brand) 55%, transparent), transparent);
+  animation: ace-sweep 1.4s linear infinite;
 }

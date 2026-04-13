@@ -6,41 +6,56 @@ interface Props {
   analysis: AnalysisResult
 }
 
-const CATEGORY_COLORS: Record<string, { dot: string; bg: string; text: string; pillBg: string; pillText: string }> = {
-  'Product Pages':            { dot: 'bg-violet-500', bg: 'bg-violet-50', text: 'text-violet-700', pillBg: 'bg-green-100', pillText: 'text-green-700' },
-  'Collection Pages':         { dot: 'bg-indigo-500', bg: 'bg-indigo-50', text: 'text-indigo-700', pillBg: 'bg-green-100', pillText: 'text-green-700' },
-  'Blog Posts':               { dot: 'bg-sky-500', bg: 'bg-sky-50', text: 'text-sky-700', pillBg: 'bg-green-100', pillText: 'text-green-700' },
-  'Static Pages':             { dot: 'bg-amber-500', bg: 'bg-amber-50', text: 'text-amber-700', pillBg: 'bg-amber-100', pillText: 'text-amber-700' },
-  'Homepage':                 { dot: 'bg-green-500', bg: 'bg-green-50', text: 'text-green-700', pillBg: 'bg-amber-100', pillText: 'text-amber-700' },
-  'Blog Index':               { dot: 'bg-teal-500', bg: 'bg-teal-50', text: 'text-teal-700', pillBg: 'bg-amber-100', pillText: 'text-amber-700' },
-  'Category Pages':           { dot: 'bg-cyan-500', bg: 'bg-cyan-50', text: 'text-cyan-700', pillBg: 'bg-green-100', pillText: 'text-green-700' },
-  'Search Pages':             { dot: 'bg-red-400', bg: 'bg-red-50', text: 'text-red-600', pillBg: 'bg-red-100', pillText: 'text-red-700' },
-  'Account Pages':            { dot: 'bg-orange-500', bg: 'bg-orange-50', text: 'text-orange-700', pillBg: 'bg-red-100', pillText: 'text-red-700' },
-  'Checkout / Cart Pages':    { dot: 'bg-rose-500', bg: 'bg-rose-50', text: 'text-rose-700', pillBg: 'bg-red-100', pillText: 'text-red-700' },
-  'Policy / Legal Pages':     { dot: 'bg-slate-500', bg: 'bg-slate-50', text: 'text-slate-700', pillBg: 'bg-amber-100', pillText: 'text-amber-700' },
-  'Help Center / Docs Pages': { dot: 'bg-lime-500', bg: 'bg-lime-50', text: 'text-lime-700', pillBg: 'bg-green-100', pillText: 'text-green-700' },
-  'Landing Pages':            { dot: 'bg-pink-500', bg: 'bg-pink-50', text: 'text-pink-700', pillBg: 'bg-green-100', pillText: 'text-green-700' },
-  'Brand Pages':              { dot: 'bg-purple-500', bg: 'bg-purple-50', text: 'text-purple-700', pillBg: 'bg-green-100', pillText: 'text-green-700' },
-  'Plant / Database Pages':   { dot: 'bg-emerald-500', bg: 'bg-emerald-50', text: 'text-emerald-700', pillBg: 'bg-green-100', pillText: 'text-green-700' },
-  'Other':                    { dot: 'bg-gray-400', bg: 'bg-gray-50', text: 'text-gray-600', pillBg: 'bg-gray-100', pillText: 'text-gray-600' },
+/**
+ * Category styling — flattened to a semantic 3-tier system:
+ *   content  → brand green (the happy path: templates, content, posts…)
+ *   dynamic  → red (anything that requires interactive/dynamic testing)
+ *   static   → neutral grey (legal, docs, static pages)
+ * No rainbow categorization. Differentiation comes from icons/text, not 16 hues.
+ */
+type CategoryTier = 'content' | 'dynamic' | 'static'
+
+const CATEGORY_TIER: Record<string, CategoryTier> = {
+  'Product Pages':            'content',
+  'Collection Pages':         'content',
+  'Blog Posts':               'content',
+  'Blog Index':               'content',
+  'Category Pages':           'content',
+  'Homepage':                 'content',
+  'Landing Pages':            'content',
+  'Brand Pages':              'content',
+  'Plant / Database Pages':   'content',
+  'Help Center / Docs Pages': 'content',
+  'Search Pages':             'dynamic',
+  'Account Pages':            'dynamic',
+  'Checkout / Cart Pages':    'dynamic',
+  'Static Pages':             'static',
+  'Policy / Legal Pages':     'static',
+  'Other':                    'static',
+}
+
+const TIER_STYLE: Record<CategoryTier, { dot: string; bg: string; text: string }> = {
+  content: { dot: 'bg-[color:var(--brand)]', bg: 'bg-[color:var(--brand-tint)]', text: 'text-[color:var(--brand-deep)]' },
+  dynamic: { dot: 'bg-[color:var(--alert)]', bg: 'bg-[color:var(--alert-soft)]', text: 'text-[color:var(--alert)]'    },
+  static:  { dot: 'bg-[color:var(--ink-3)]', bg: 'bg-[color:var(--surface-2)]', text: 'text-[color:var(--ink-2)]'     },
 }
 
 function getColor(category: string) {
-  return CATEGORY_COLORS[category] ?? CATEGORY_COLORS['Other']
+  const tier = CATEGORY_TIER[category] ?? 'static'
+  return TIER_STYLE[tier]
 }
 
 function getPillStyle(group: CategoryGroup) {
-  const colors = getColor(group.category)
   if (group.isFamilyGroup) {
-    return { bg: 'bg-blue-100', text: 'text-blue-700' }
-  }
-  if (group.templateCount > 0) {
-    return { bg: 'bg-green-100', text: 'text-green-700' }
+    return { bg: 'bg-[color:var(--scan-soft)]', text: 'text-[color:var(--scan)]' }
   }
   if (group.dynamicCount > 0) {
-    return { bg: 'bg-red-100', text: 'text-red-700' }
+    return { bg: 'bg-[color:var(--alert-soft)]', text: 'text-[color:var(--alert)]' }
   }
-  return { bg: colors.pillBg, text: colors.pillText }
+  if (group.templateCount > 0) {
+    return { bg: 'bg-[color:var(--brand-tint)]', text: 'text-[color:var(--brand-deep)]' }
+  }
+  return { bg: 'bg-[color:var(--surface-2)]', text: 'text-[color:var(--ink-2)]' }
 }
 
 export default function PageCategories({ analysis }: Props) {

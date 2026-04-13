@@ -18,7 +18,7 @@ interface Props {
 function statusIcon(status: SubdomainEntry['status']) {
   switch (status) {
     case 'scanning':
-      return <Loader2 size={14} className="text-blue-500 animate-spin shrink-0" />
+      return <Loader2 size={14} className="text-[color:var(--scan)] animate-spin shrink-0" />
     case 'complete':
       return <CheckCircle2 size={14} className="text-green-500 shrink-0" />
     case 'error':
@@ -73,7 +73,7 @@ function SubdomainCard({
 
         {/* Progress while scanning */}
         {entry.status === 'scanning' && (
-          <span className="text-xs text-blue-600 shrink-0">
+          <span className="text-xs text-[color:var(--scan)] shrink-0">
             {entry.progressStep ?? 'Scanning…'} {entry.progress != null ? `${entry.progress}%` : ''}
           </span>
         )}
@@ -117,7 +117,7 @@ function SubdomainCard({
         <div className="mx-3 mb-2">
           <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
             <div
-              className="h-full bg-blue-500 rounded-full transition-all duration-300"
+              className="h-full bg-[color:var(--scan-soft)]0 rounded-full transition-all duration-300"
               style={{ width: `${entry.progress}%` }}
             />
           </div>
@@ -206,7 +206,7 @@ export default function SubdomainManager({
     <div className="ace-panel">
       {/* Header */}
       <div className="flex items-center gap-3 mb-4">
-        <div className="flex items-center justify-center w-7 h-7 bg-indigo-600 text-white text-xs font-bold rounded-full">
+        <div className="flex items-center justify-center w-7 h-7 bg-[color:var(--brand)] text-white text-xs font-bold rounded-full">
           S
         </div>
         <div>
@@ -226,7 +226,7 @@ export default function SubdomainManager({
             onChange={(e) => { setInputUrl(e.target.value); setInputError('') }}
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
             placeholder={`e.g. https://plants.${mainDomain}/sitemap.php`}
-            className={`w-full text-sm px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 ${
+            className={`w-full text-sm px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[color:var(--brand)] ${
               inputError ? 'border-red-300 bg-red-50' : 'border-gray-200'
             }`}
           />
@@ -236,7 +236,7 @@ export default function SubdomainManager({
         </div>
         <button
           onClick={handleAdd}
-          className="flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors shrink-0"
+          className="flex items-center gap-1.5 px-3 py-2 ace-btn"
         >
           <Plus size={15} />
           Add
@@ -263,14 +263,14 @@ export default function SubdomainManager({
 
       {/* Combined total banner */}
       {includedCount > 0 && (
-        <div className="mt-4 p-3 bg-indigo-50 border border-indigo-100 rounded-lg">
+        <div className="mt-4 p-3 bg-[color:var(--brand-tint)] border border-[color:var(--rule)] rounded-lg">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="text-xs text-indigo-700">
+            <div className="text-xs text-[color:var(--brand-deep)]">
               <span className="font-semibold">Combined total</span>{' '}
               (main domain + {includedCount} subdomain{includedCount !== 1 ? 's' : ''})
             </div>
             <div className="flex items-center gap-3 text-xs">
-              <span className="text-indigo-600">
+              <span className="text-[color:var(--brand-deep)]">
                 <span className="font-bold">{combinedRawCount.toLocaleString()}</span> raw pages
               </span>
               <span className="text-green-700 font-bold">
@@ -278,7 +278,7 @@ export default function SubdomainManager({
               </span>
             </div>
           </div>
-          <div className="mt-1.5 text-xs text-indigo-500">
+          <div className="mt-1.5 text-xs text-ink-3">
             Subdomains contributing: +{totalSubdomainWeighted.toLocaleString()} weighted pages — quote recommendation updates automatically.
           </div>
         </div>

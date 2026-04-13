@@ -9,39 +9,27 @@ interface Props {
 }
 
 const TYPE_BADGE: Record<string, string> = {
-  template: 'bg-blue-100 text-blue-700',
-  content:  'bg-green-100 text-green-700',
-  unique:   'bg-amber-100 text-amber-700',
-  dynamic:  'bg-red-100 text-red-700',
+  template: 'bg-[color:var(--scan-soft)] text-[color:var(--scan)]',
+  content:  'bg-[color:var(--brand-tint)] text-[color:var(--brand-deep)]',
+  unique:   'bg-[color:var(--surface-2)] text-[color:var(--ink-2)]',
+  dynamic:  'bg-[color:var(--alert-soft)] text-[color:var(--alert)]',
 }
 
-const CATEGORY_DOT: Record<string, string> = {
-  'Product Pages':            'bg-violet-500',
-  'Collection Pages':         'bg-indigo-500',
-  'Blog Posts':               'bg-sky-500',
-  'Static Pages':             'bg-amber-500',
-  'Homepage':                 'bg-green-500',
-  'Blog Index':               'bg-teal-500',
-  'Category Pages':           'bg-cyan-500',
-  'Search Pages':             'bg-red-400',
-  'Account Pages':            'bg-orange-500',
-  'Checkout / Cart Pages':    'bg-rose-500',
-  'Policy / Legal Pages':     'bg-slate-500',
-  'Help Center / Docs Pages': 'bg-lime-500',
-  'Landing Pages':            'bg-pink-500',
-  'Brand Pages':              'bg-purple-500',
-  'Plant / Database Pages':   'bg-emerald-500',
-  'Other':                    'bg-gray-400',
-}
+// All category dots use the same brand green. Differentiation reads from the
+// category label, not from a rainbow — scanner tools don't need 16 hues.
+const CATEGORY_DOT: Record<string, string> = new Proxy(
+  {},
+  { get: () => 'bg-[color:var(--brand)]' }
+) as Record<string, string>
 
 function ConfidencePill({ value }: { value: number }) {
   const pct = Math.round(value * 100)
   const color =
-    pct >= 85 ? 'bg-green-100 text-green-700' :
-    pct >= 65 ? 'bg-amber-100 text-amber-700' :
-                'bg-gray-100 text-gray-500'
+    pct >= 85 ? 'bg-[color:var(--brand-tint)] text-[color:var(--brand-deep)]' :
+    pct >= 65 ? 'bg-[color:var(--warn-soft)] text-[color:var(--warn)]' :
+                'bg-[color:var(--surface-2)] text-[color:var(--ink-3)]'
   return (
-    <span className={`inline-flex px-1.5 py-0.5 rounded text-xs font-medium ${color}`}>
+    <span className={`inline-flex px-1.5 py-0.5 rounded-[2px] font-mono text-[10px] font-medium tabular-nums ${color}`}>
       {pct}%
     </span>
   )
@@ -63,26 +51,26 @@ function LayoutFamilyCard({
   const representativeUrl = group.representativeUrl
 
   return (
-    <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 mb-2">
+    <div className="rounded-lg border border-[color:var(--scan)] bg-[color:var(--scan-soft)] p-3 mb-2">
       <div className="flex items-start gap-2.5">
-        <div className="flex items-center justify-center w-7 h-7 bg-blue-100 rounded-md shrink-0 mt-0.5">
-          <Layers size={14} className="text-blue-600" />
+        <div className="flex items-center justify-center w-7 h-7 bg-[color:var(--scan-soft)] rounded-md shrink-0 mt-0.5">
+          <Layers size={14} className="text-[color:var(--scan)]" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-bold text-blue-700 uppercase tracking-wide">
+            <span className="text-xs font-bold text-[color:var(--scan)] uppercase tracking-wide">
               Shared Layout
             </span>
-            <span className="text-xs text-blue-600">
+            <span className="text-xs text-[color:var(--scan)]">
               1 full audit × {weights.template}
             </span>
           </div>
-          <p className="text-xs text-blue-700 mt-0.5 leading-relaxed">
+          <p className="text-xs text-[color:var(--scan)] mt-0.5 leading-relaxed">
             All <span className="font-semibold">{group.rawCount.toLocaleString()}</span> pages
             in this group share the same layout — navigation, page regions, components, and
             structure are identical. Only the content changes (names, descriptions, images).
           </p>
-          <p className="text-xs text-blue-600 mt-1">
+          <p className="text-xs text-[color:var(--scan)] mt-1">
             Priced as: <span className="font-medium">1 layout audit (×{weights.template})</span>
             {' + '}
             <span className="font-medium">
@@ -95,21 +83,21 @@ function LayoutFamilyCard({
           {representativeUrl && (
             <button
               onClick={() => setShowReasoning(!showReasoning)}
-              className="mt-1.5 flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700"
+              className="mt-1.5 flex items-center gap-1 text-xs text-[color:var(--scan)] hover:text-[color:var(--scan)]"
             >
               <Info size={11} />
               {showReasoning ? 'Hide reference URL' : 'Show layout reference URL'}
             </button>
           )}
           {showReasoning && representativeUrl && (
-            <div className="mt-1.5 p-2 bg-white border border-blue-100 rounded text-xs text-gray-600 break-all">
-              <span className="text-blue-500 font-medium">Layout reference (any page can serve as the audit target):</span>
+            <div className="mt-1.5 p-2 bg-white border border-[color:var(--scan-soft)] rounded text-xs text-gray-600 break-all">
+              <span className="text-[color:var(--scan)] font-medium">Layout reference (any page can serve as the audit target):</span>
               <br />
               <a
                 href={representativeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:underline text-blue-600"
+                className="hover:underline text-[color:var(--scan)]"
               >
                 {representativeUrl}
               </a>
@@ -152,7 +140,7 @@ function URLRow({ url: u, hideBadgeIfFamily }: { url: ClassifiedURL; hideBadgeIf
           {hasReasoning && (
             <button
               onClick={() => setShowReasoning(!showReasoning)}
-              className="text-gray-300 hover:text-indigo-500 transition-colors"
+              className="text-gray-300 hover:text-ink-3 transition-colors"
               title="Why this classification?"
             >
               <Info size={12} />
@@ -162,21 +150,21 @@ function URLRow({ url: u, hideBadgeIfFamily }: { url: ClassifiedURL; hideBadgeIf
       </div>
 
       {showReasoning && hasReasoning && (
-        <div className="mt-1.5 ml-10 p-2 bg-indigo-50 border border-indigo-100 rounded text-xs text-indigo-800 space-y-0.5">
+        <div className="mt-1.5 ml-10 p-2 bg-[color:var(--brand-tint)] border border-[color:var(--rule)] rounded text-xs text-ink space-y-0.5">
           {u.reasoning!.map((note, i) => (
             <div key={i} className="flex items-start gap-1.5">
-              <span className="text-indigo-400 shrink-0 mt-0.5">•</span>
+              <span className="text-ink-4 shrink-0 mt-0.5">•</span>
               <span>{note}</span>
             </div>
           ))}
           {u.sourceSitemap && (
-            <div className="flex items-start gap-1.5 pt-1 border-t border-indigo-100">
-              <span className="text-indigo-400 shrink-0 mt-0.5">⬡</span>
-              <span>Source: <code className="bg-indigo-100 px-1 rounded">{u.sourceSitemap}</code></span>
+            <div className="flex items-start gap-1.5 pt-1 border-t border-[color:var(--rule)]">
+              <span className="text-ink-4 shrink-0 mt-0.5">⬡</span>
+              <span>Source: <code className="bg-[color:var(--brand-soft)] px-1 rounded">{u.sourceSitemap}</code></span>
             </div>
           )}
           {u.dynamicSignals && u.dynamicSignals.length > 0 && (
-            <div className="flex items-start gap-1.5 pt-1 border-t border-indigo-100">
+            <div className="flex items-start gap-1.5 pt-1 border-t border-[color:var(--rule)]">
               <span className="text-red-400 shrink-0 mt-0.5">⚡</span>
               <span>Dynamic signals: {u.dynamicSignals.join(', ')}</span>
             </div>
@@ -264,7 +252,7 @@ function CategorySection({
             {!isFamilyGroup && (
               <div className="flex flex-wrap gap-2 text-xs">
                 {group.templateCount > 0 && (
-                  <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">
+                  <span className="px-2 py-0.5 bg-[color:var(--scan-soft)] text-[color:var(--scan)] rounded-full font-medium">
                     {group.templateCount} template
                   </span>
                 )}
@@ -291,13 +279,13 @@ function CategorySection({
               <div>
                 <button
                   onClick={() => setShowClusterReasoning(!showClusterReasoning)}
-                  className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+                  className="flex items-center gap-1 text-xs text-[color:var(--brand-deep)] hover:text-ink font-medium"
                 >
                   <Info size={11} />
                   {showClusterReasoning ? 'Hide explanation' : 'Why was this classified this way?'}
                 </button>
                 {showClusterReasoning && (
-                  <div className="mt-2 p-2.5 bg-indigo-50 border border-indigo-100 rounded text-xs text-indigo-800 leading-relaxed">
+                  <div className="mt-2 p-2.5 bg-[color:var(--brand-tint)] border border-[color:var(--rule)] rounded text-xs text-ink leading-relaxed">
                     {group.clusterReasoning}
                   </div>
                 )}
@@ -356,11 +344,11 @@ export default function URLBreakdown({ analysis }: Props) {
       {/* Legend */}
       <div className="flex flex-wrap gap-3 mb-4 text-xs text-gray-500">
         <div className="flex items-center gap-1.5">
-          <Layers size={11} className="text-blue-500" />
+          <Layers size={11} className="text-[color:var(--scan)]" />
           Layout Family = shared structure, content-only pages
         </div>
         <div className="flex items-center gap-1.5">
-          <Info size={11} className="text-indigo-400" />
+          <Info size={11} className="text-ink-4" />
           Click ⓘ for classification reasoning
         </div>
       </div>

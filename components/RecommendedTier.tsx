@@ -145,17 +145,17 @@ export default function RecommendedTier({ analysis, recommendation }: Props) {
           {/* Reductions Summary — Page Reduction + Cost Reduction side-by-side */}
           {(pageReductionPercent > 0 || costReductionPercent > 0) && (
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+              <div className="p-4 bg-[color:var(--scan-soft)] rounded-xl border border-[color:var(--scan)]">
                 <div className="flex items-center gap-2 mb-2">
-                  <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5 text-[color:var(--scan)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
                   </svg>
-                  <span className="text-sm font-bold text-blue-800">Page Reduction</span>
+                  <span className="text-sm font-bold text-ink">Page Reduction</span>
                 </div>
-                <div className="text-3xl font-black text-blue-700 mb-1">
+                <div className="text-3xl font-black text-[color:var(--scan)] mb-1">
                   {pageReductionPercent.toFixed(1)}%
                 </div>
-                <p className="text-xs text-blue-600">
+                <p className="text-xs text-[color:var(--scan)]">
                   {analysis.rawPageCount.toLocaleString()} raw &rarr;{' '}
                   {analysis.weightedPageCount.toLocaleString()} weighted
                 </p>
