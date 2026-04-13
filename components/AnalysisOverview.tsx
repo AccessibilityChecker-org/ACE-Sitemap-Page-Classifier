@@ -1,6 +1,7 @@
 'use client'
 
 import type { AnalysisResult } from '@/types'
+import { largestRemainderPercentages } from '@/lib/utils/percentages'
 
 interface Props {
   analysis: AnalysisResult
@@ -32,6 +33,14 @@ export default function AnalysisOverview({ analysis }: Props) {
     { type: 'unique' as const, count: uniqueUrlCount },
     { type: 'dynamic' as const, count: dynamicUrlCount },
   ].filter((s) => s.count > 0)
+
+  // Displayed percentages use Hamilton's largest-remainder method so they sum
+  // to exactly 100% at 1-decimal precision. Bar widths still use the exact
+  // fractional share for visual accuracy.
+  const displayedPercents = largestRemainderPercentages(
+    barSegments.map((s) => s.count),
+    1
+  )
 
   const kpis = [
     {
@@ -144,22 +153,24 @@ export default function AnalysisOverview({ analysis }: Props) {
         <div>
           <p className="text-xs font-medium text-gray-500 mb-2">Page Type Distribution</p>
           <div className="h-4 rounded-full overflow-hidden flex">
-            {barSegments.map((seg) => {
+            {barSegments.map((seg, idx) => {
               const pct = (seg.count / total) * 100
+              const displayPct = displayedPercents[idx]
               if (pct < 0.1) return null
               return (
                 <div
                   key={seg.type}
                   className={`${COLORS[seg.type].bg} transition-all`}
                   style={{ width: `${pct}%` }}
-                  title={`${COLORS[seg.type].label}: ${formatNum(seg.count)} (${pct.toFixed(1)}%)`}
+                  title={`${COLORS[seg.type].label}: ${formatNum(seg.count)} (${displayPct.toFixed(1)}%)`}
                 />
               )
             })}
           </div>
           <div className="flex flex-wrap gap-3 mt-2">
-            {barSegments.map((seg) => {
+            {barSegments.map((seg, idx) => {
               const pct = (seg.count / total) * 100
+              const displayPct = displayedPercents[idx]
               if (pct < 0.1) return null
               return (
                 <div key={seg.type} className="flex items-center gap-1.5">
@@ -167,7 +178,7 @@ export default function AnalysisOverview({ analysis }: Props) {
                   <span className="text-xs text-gray-600">
                     {COLORS[seg.type].label}:{' '}
                     <span className="font-medium">{formatNum(seg.count)}</span>{' '}
-                    <span className="text-gray-400">({pct.toFixed(1)}%)</span>
+                    <span className="text-gray-400">({displayPct.toFixed(1)}%)</span>
                   </span>
                 </div>
               )

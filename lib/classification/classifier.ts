@@ -17,6 +17,7 @@
 import type { ClassifiedURL, CategoryGroup, PageCategory, PageType, PageWeights } from '@/types'
 import { findMatchingRule } from './rules'
 import { clusterByPattern } from '../template-clustering/clusterer'
+import { largestRemainderPercentages } from '../utils/percentages'
 
 // ─── Category behaviour tables ───────────────────────────────────────────────
 
@@ -358,8 +359,9 @@ export function classifyUrls(
     const weightedCount = Math.round(
       categoryUrls.reduce((sum, u) => sum + u.weightedValue, 0)
     )
-    const percentOfSite =
-      totalRaw > 0 ? Math.round((rawCount / totalRaw) * 1000) / 10 : 0
+    // Exact share here; final display value is replaced below using the
+    // largest-remainder method so all categories sum to exactly 100%.
+    const percentOfSite = totalRaw > 0 ? (rawCount / totalRaw) * 100 : 0
     const avgConfidence =
       rawCount > 0
         ? Math.round(
@@ -439,6 +441,19 @@ export function classifyUrls(
 
   // Sort by raw count descending
   categories.sort((a, b) => b.rawCount - a.rawCount)
+
+  // Apply Hamilton's largest-remainder method so displayed percentOfSite values
+  // always sum to exactly 100% (at 1-decimal precision), avoiding 99.9% / 100.1%
+  // artifacts from independent per-category rounding.
+  if (totalRaw > 0 && categories.length > 0) {
+    const balanced = largestRemainderPercentages(
+      categories.map((c) => c.rawCount),
+      1
+    )
+    for (let i = 0; i < categories.length; i++) {
+      categories[i].percentOfSite = balanced[i]
+    }
+  }
 
   return { classified, categories }
 }
