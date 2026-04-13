@@ -12,6 +12,16 @@ function fmt(n: number): string {
 }
 
 export default function RecommendedTier({ analysis, recommendation }: Props) {
+  // Reduction metrics — computed from the current scan, not hard-coded.
+  const pageReductionPercent =
+    analysis.rawPageCount > 0
+      ? (1 - analysis.weightedPageCount / analysis.rawPageCount) * 100
+      : 0
+  const costReductionPercent =
+    recommendation.rawAnnualPrice > 0
+      ? (1 - recommendation.annualPrice / recommendation.rawAnnualPrice) * 100
+      : 0
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <div className="flex items-center gap-3 mb-5">
@@ -128,6 +138,42 @@ export default function RecommendedTier({ analysis, recommendation }: Props) {
               <p className="text-xs text-green-600">
                 with weighted pricing vs. raw-count pricing
               </p>
+            </div>
+          )}
+
+          {/* Reductions Summary — Page Reduction + Cost Reduction side-by-side */}
+          {(pageReductionPercent > 0 || costReductionPercent > 0) && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                  <span className="text-sm font-bold text-blue-800">Page Reduction</span>
+                </div>
+                <div className="text-3xl font-black text-blue-700 mb-1">
+                  {pageReductionPercent.toFixed(1)}%
+                </div>
+                <p className="text-xs text-blue-600">
+                  {analysis.rawPageCount.toLocaleString()} raw &rarr;{' '}
+                  {analysis.weightedPageCount.toLocaleString()} weighted
+                </p>
+              </div>
+
+              <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
+                <div className="flex items-center gap-2 mb-2">
+                  <svg className="w-5 h-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                  <span className="text-sm font-bold text-emerald-800">Cost Reduction</span>
+                </div>
+                <div className="text-3xl font-black text-emerald-700 mb-1">
+                  {costReductionPercent.toFixed(1)}%
+                </div>
+                <p className="text-xs text-emerald-600">
+                  {fmt(recommendation.rawAnnualPrice)} &rarr; {fmt(recommendation.annualPrice)}/yr
+                </p>
+              </div>
             </div>
           )}
 
