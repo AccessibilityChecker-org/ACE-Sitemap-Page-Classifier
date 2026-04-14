@@ -197,6 +197,80 @@ export async function generatePDFQuote(
     margin: { left: margin, right: margin },
   })
 
+  // Weighted Pricing Impact section
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  y = (doc as any).lastAutoTable?.finalY + 8 || y + 8
+
+  if (recommendation.rawPlan && recommendation.weightedPlan) {
+    doc.setTextColor(...GRAY_700)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(11)
+    doc.text('Weighted Pricing Impact', margin, y)
+    y += 6
+
+    // Without weighted pricing
+    doc.setFillColor(254, 242, 242)
+    doc.roundedRect(margin, y, contentWidth, 22, 2, 2, 'F')
+    doc.setTextColor(153, 27, 27)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8)
+    doc.text('WITHOUT WEIGHTED PRICING', margin + 4, y + 5)
+    doc.setTextColor(...GRAY_700)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    doc.text(
+      `Based on ${analysis.rawPageCount.toLocaleString()} raw pages → ${recommendation.rawPlan.name} (up to ${recommendation.rawPlan.maxWeightedPages.toLocaleString()} pages)`,
+      margin + 4, y + 11
+    )
+    doc.text(
+      `${fmt(recommendation.rawMonthlyPrice)}/mo  •  ${fmt(recommendation.rawAnnualPrice)}/yr`,
+      margin + 4, y + 17
+    )
+    y += 26
+
+    // With weighted pricing
+    doc.setFillColor(...LIGHT_GREEN)
+    doc.roundedRect(margin, y, contentWidth, 22, 2, 2, 'F')
+    doc.setTextColor(...DARK_GREEN)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8)
+    doc.text('WITH ACE™ WEIGHTED PAGE CLASSIFICATION', margin + 4, y + 5)
+    doc.setTextColor(...GRAY_700)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(8)
+    doc.text(
+      `Effective billable scope: ${analysis.weightedPageCount.toLocaleString()} pages → ${recommendation.weightedPlan.name}`,
+      margin + 4, y + 11
+    )
+    doc.text(
+      `${fmt(recommendation.monthlyPrice)}/mo  •  ${fmt(recommendation.annualPrice)}/yr`,
+      margin + 4, y + 17
+    )
+    y += 26
+
+    // Total Savings
+    doc.setFillColor(...GRAY_100)
+    doc.roundedRect(margin, y, contentWidth, 20, 2, 2, 'F')
+    doc.setTextColor(...GRAY_700)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8)
+    doc.text('TOTAL SAVINGS', margin + 4, y + 5)
+    doc.setTextColor(...DARK_GREEN)
+    doc.setFontSize(9)
+    doc.text(
+      `${fmt(recommendation.rawMonthlyPrice - recommendation.monthlyPrice)}/mo  •  ${fmt(recommendation.annualSavings)}/yr`,
+      margin + 4, y + 12
+    )
+    doc.setTextColor(...GRAY_700)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(7)
+    doc.text(
+      `This reflects a ${recommendation.weightReductionPercent}% reduction in annual pricing, as template-driven and structurally similar pages typically require less remediation effort.`,
+      margin + 4, y + 17,
+      { maxWidth: contentWidth - 8 }
+    )
+  }
+
   addFooter(doc, pageWidth, pageHeight, margin, 1)
 
   // ─── PAGE 2 ───────────────────────────────────────────────────────────────

@@ -1,9 +1,14 @@
 'use client'
 
-import type { AnalysisResult, CategoryGroup } from '@/types'
+import type { AnalysisResult, CategoryGroup, PricingRecommendation } from '@/types'
+
+function fmt(n: number): string {
+  return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
+}
 
 interface Props {
   analysis: AnalysisResult
+  recommendation: PricingRecommendation
 }
 
 /**
@@ -58,7 +63,7 @@ function getPillStyle(group: CategoryGroup) {
   return { bg: 'bg-[color:var(--surface-2)]', text: 'text-[color:var(--ink-2)]' }
 }
 
-export default function PageCategories({ analysis }: Props) {
+export default function PageCategories({ analysis, recommendation }: Props) {
   const totalRaw = analysis.rawPageCount
 
   return (
@@ -172,6 +177,88 @@ export default function PageCategories({ analysis }: Props) {
           using template weighting
         </div>
       </div>
+
+      {/* ── Weighted Pricing Impact ─────────────────────────────────── */}
+      {recommendation.rawPlan && recommendation.weightedPlan && (
+        <div className="mt-6 space-y-4">
+          <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wider">
+            Weighted Pricing Impact
+          </h3>
+
+          {/* Without weighted pricing */}
+          <div className="p-4 bg-red-50 rounded-lg border border-red-100">
+            <p className="text-xs font-bold text-red-800 uppercase tracking-wider mb-2">
+              Without Weighted Pricing
+            </p>
+            <p className="text-sm text-gray-700">
+              Without weighted pricing, {analysis.domain} would fall under the{' '}
+              <span className="font-semibold">{recommendation.rawPlan.name}</span>{' '}
+              (which supports up to {recommendation.rawPlan.maxWeightedPages.toLocaleString()} pages),
+              based on the {analysis.rawPageCount.toLocaleString()} raw pages identified during our site analysis.
+            </p>
+            <div className="mt-2 flex gap-6">
+              <span className="text-sm text-gray-800">
+                <span className="font-semibold">{fmt(recommendation.rawMonthlyPrice)}</span>/mo
+              </span>
+              <span className="text-sm text-gray-800">
+                <span className="font-semibold">{fmt(recommendation.rawAnnualPrice)}</span>/yr
+              </span>
+            </div>
+          </div>
+
+          {/* With weighted pricing */}
+          <div className="p-4 bg-green-50 rounded-lg border border-green-100">
+            <p className="text-xs font-bold text-green-800 uppercase tracking-wider mb-2">
+              With ACE&trade; Weighted Page Classification
+            </p>
+            <p className="text-sm text-gray-700">
+              Using ACE&trade; weighted page classification, the effective billable scope is reduced to{' '}
+              <span className="font-semibold">{analysis.weightedPageCount.toLocaleString()} pages</span>,
+              qualifying for the{' '}
+              <span className="font-semibold">{recommendation.weightedPlan.name}</span> plan.
+            </p>
+            <div className="mt-2 flex gap-6">
+              <span className="text-sm text-gray-800">
+                <span className="font-semibold">{fmt(recommendation.monthlyPrice)}</span>/mo
+              </span>
+              <span className="text-sm text-gray-800">
+                <span className="font-semibold">{fmt(recommendation.annualPrice)}</span>/yr
+              </span>
+            </div>
+          </div>
+
+          {/* Total Savings */}
+          <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <p className="text-xs font-bold text-gray-800 uppercase tracking-wider mb-2">
+              Total Savings
+            </p>
+            <div className="flex gap-6 mb-3">
+              <span className="text-sm text-gray-800">
+                Monthly:{' '}
+                <span className="font-bold text-green-700">
+                  {fmt(recommendation.rawMonthlyPrice - recommendation.monthlyPrice)}
+                </span>
+                /mo
+              </span>
+              <span className="text-sm text-gray-800">
+                Annual:{' '}
+                <span className="font-bold text-green-700">
+                  {fmt(recommendation.annualSavings)}
+                </span>
+                /yr
+              </span>
+            </div>
+            <p className="text-xs text-gray-600">
+              This reflects a{' '}
+              <span className="font-semibold">
+                {recommendation.weightReductionPercent}% reduction
+              </span>{' '}
+              in annual pricing, as template-driven and structurally similar pages
+              typically require less remediation effort.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -463,7 +463,7 @@ export default function HomePage() {
         {showResults && (
           <>
             <div className="ace-reveal"><AnalysisOverview analysis={analysisResult} /></div>
-            <div className="ace-reveal"><PageCategories analysis={analysisResult} /></div>
+            <div className="ace-reveal"><PageCategories analysis={analysisResult} recommendation={recommendation} /></div>
             <div className="ace-reveal">
               <SubdomainManager
                 subdomains={subdomains}
