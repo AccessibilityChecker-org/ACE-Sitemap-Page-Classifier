@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Globe, Code, List, Zap } from 'lucide-react'
 import type { PageWeights } from '@/types'
 
@@ -15,15 +15,25 @@ interface Props {
   }) => void
   onLoadDemo: () => void
   isLoading: boolean
+  /** When set (nonce changes), programmatically switch to PASTE URLS tab and fill textarea. */
+  importedUrlList?: { value: string; nonce: number } | null
 }
 
 type Tab = 'url' | 'xml' | 'urls'
 
-export default function LoadSitemap({ weights, onAnalyze, onLoadDemo, isLoading }: Props) {
+export default function LoadSitemap({ weights, onAnalyze, onLoadDemo, isLoading, importedUrlList }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('url')
   const [sitemapUrl, setSitemapUrl] = useState('')
   const [xmlContent, setXmlContent] = useState('')
   const [urlList, setUrlList] = useState('')
+
+  // Apply external import (from ace-sitemap-converter handoff)
+  useEffect(() => {
+    if (importedUrlList && importedUrlList.value) {
+      setActiveTab('urls')
+      setUrlList(importedUrlList.value)
+    }
+  }, [importedUrlList?.nonce])
 
   const handleSubmit = () => {
     if (activeTab === 'url') {

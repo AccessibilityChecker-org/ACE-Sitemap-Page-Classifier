@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import type {
   AnalysisResult,
   AnalysisProgress,
@@ -47,6 +47,44 @@ function getDefaultQuoteState(): QuoteBuilderState {
 
 function getDomain(url: string): string {
   try { return new URL(url).hostname } catch { return url }
+}
+
+const MAX_IMPORT_URLS = 10000
+
+interface AceImportPayload {
+  v: number
+  source: string
+  source_url?: string
+  count?: number
+  urls: string[]
+  issued_at?: string
+}
+
+/** Decode a base64url-encoded JSON handoff payload. Returns null on any failure. */
+function decodeAceImport(fragment: string): AceImportPayload | null {
+  try {
+    let b64 = fragment.replace(/-/g, '+').replace(/_/g, '/')
+    const pad = b64.length % 4
+    if (pad) b64 += '='.repeat(4 - pad)
+    const binary = atob(b64)
+    // UTF-8 safe decode
+    const json = decodeURIComponent(escape(binary))
+    const parsed = JSON.parse(json)
+    if (
+      parsed &&
+      parsed.v === 1 &&
+      parsed.source === 'ace-sitemap-converter' &&
+      Array.isArray(parsed.urls) &&
+      parsed.urls.length > 0 &&
+      parsed.urls.every((u: unknown) => typeof u === 'string')
+    ) {
+      return parsed as AceImportPayload
+    }
+    return null
+  } catch (err) {
+    console.warn('[ace-import] Failed to decode handoff payload:', err)
+    return null
+  }
 }
 
 /** Stream an analysis from the API and return the completed AnalysisResult */
@@ -107,8 +145,46 @@ export default function HomePage() {
   const [subdomains, setSubdomains]         = useState<SubdomainEntry[]>([])
   const [quoteState, setQuoteState]         = useState<QuoteBuilderState>(getDefaultQuoteState())
 
+  // Handoff from ace-sitemap-converter
+  const [importedUrlList, setImportedUrlList] = useState<{ value: string; nonce: number } | null>(null)
+  const [importNotice, setImportNotice]       = useState<{ count: number; source: string } | null>(null)
+  const [importError, setImportError]         = useState<string | null>(null)
+  const loadSitemapRef                        = useRef<HTMLDivElement | null>(null)
+
   // Track running subdomain scans so we can cancel them on page reset
   const subdomainAbortRefs = useRef<Map<string, AbortController>>(new Map())
+
+  // ── Detect ace-sitemap-converter handoff on mount (hash fragment) ─────────
+  useEffect(() => {
+    const hash = window.location.hash
+    const prefix = '#ace-import='
+    if (!hash.startsWith(prefix)) return
+
+    const payload = decodeAceImport(hash.slice(prefix.length))
+
+    // Clear hash so refresh doesn't re-import
+    history.replaceState(null, '', window.location.pathname + window.location.search)
+
+    if (!payload) return
+
+    if (payload.urls.length > MAX_IMPORT_URLS) {
+      setImportError(
+        `Import rejected: ${payload.urls.length.toLocaleString()} URLs exceeds the ${MAX_IMPORT_URLS.toLocaleString()}-URL limit.`,
+      )
+      return
+    }
+
+    setImportedUrlList({ value: payload.urls.join('\n'), nonce: Date.now() })
+    setImportNotice({
+      count: payload.count ?? payload.urls.length,
+      source: payload.source,
+    })
+
+    // Smooth-scroll to Section 1 so the pasted list is visible
+    requestAnimationFrame(() => {
+      loadSitemapRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }, [])
 
   // ── Derived: combined weighted/raw counts ──────────────────────────────────
   const includedSubdomains = subdomains.filter((s) => s.included && s.analysis)
@@ -317,8 +393,62 @@ export default function HomePage() {
 
       <div className="space-y-10 pt-6">
         {/* Step 1: Load Sitemap */}
-        <div className="ace-reveal" style={{ animationDelay: '60ms' }}>
-          <LoadSitemap weights={weights} onAnalyze={handleAnalyze} onLoadDemo={handleLoadDemo} isLoading={isLoading} />
+        <div ref={loadSitemapRef} className="ace-reveal" style={{ animationDelay: '60ms' }}>
+          {importNotice && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="ace-panel ace-panel--inset mb-4 flex items-start gap-4"
+              style={{ borderColor: 'var(--brand)' }}
+            >
+              <div className="flex-1">
+                <div className="font-mono text-[11px] tracking-[0.22em] uppercase text-[color:var(--brand-deep)] mb-1 flex items-center gap-2">
+                  <span aria-hidden>✓</span>
+                  <span>URLs added from Sitemap Converter</span>
+                </div>
+                <p className="text-[14px] leading-[1.5] text-ink-2">
+                  <strong>{importNotice.count.toLocaleString()}</strong> URLs imported from{' '}
+                  <code className="font-mono text-[12px]">{importNotice.source}</code>. Review the
+                  list below, then click <strong>FETCH &amp; ANALYZE</strong> to continue.
+                </p>
+              </div>
+              <button
+                onClick={() => setImportNotice(null)}
+                className="ace-btn ace-btn--ghost"
+                aria-label="Dismiss import notification"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+          {importError && (
+            <div
+              role="alert"
+              className="ace-panel ace-panel--inset mb-4 flex items-start gap-4"
+              style={{ borderColor: '#c0392b' }}
+            >
+              <div className="flex-1">
+                <div className="font-mono text-[11px] tracking-[0.22em] uppercase text-[#c0392b] mb-1">
+                  Import failed
+                </div>
+                <p className="text-[14px] leading-[1.5] text-ink-2">{importError}</p>
+              </div>
+              <button
+                onClick={() => setImportError(null)}
+                className="ace-btn ace-btn--ghost"
+                aria-label="Dismiss error"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+          <LoadSitemap
+            weights={weights}
+            onAnalyze={handleAnalyze}
+            onLoadDemo={handleLoadDemo}
+            isLoading={isLoading}
+            importedUrlList={importedUrlList}
+          />
         </div>
 
         {/* Step 2: Page Weights */}
